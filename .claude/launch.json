@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "animejs-recreation",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "animejs-recreation", "run", "dev"],
+      "port": 5173,
+      "url": "http://127.0.0.1:5173"
+    }
+  ]
+}
