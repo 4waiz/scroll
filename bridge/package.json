@@ -1,0 +1,29 @@
+{
+  "name": "bridge-twin",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "BRIDGE Twin - real-time digital twin platform, scroll-driven 3D product site",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "typecheck": "tsc --noEmit",
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test --update-snapshots",
+    "shots": "playwright test tests/visual.spec.ts --reporter=list"
+  },
+  "dependencies": {
+    "animejs": "^4.2.2",
+    "three": "^0.181.0"
+  },
+  "devDependencies": {
+    "@fontsource-variable/archivo": "^5.2.5",
+    "@fontsource-variable/jetbrains-mono": "^5.2.5",
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^26.2.0",
+    "@types/three": "^0.181.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  }
+}
