@@ -38,6 +38,15 @@ const PAGES = [
     model: 'vehicle.glb',
     forbidden: 'bridge-engine.glb',
   },
+  {
+    slug: 'field',
+    path: '/field.html',
+    title: /Field Robotics/,
+    heading: 'Every joint',
+    eyebrow: 'Field robotics',
+    model: 'quadruped.glb',
+    forbidden: 'bridge-engine.glb',
+  },
 ];
 
 async function settle(page: Page, frames = 18): Promise<void> {
@@ -95,6 +104,7 @@ test('header links every machine page', async ({ page }) => {
   expect(hrefs).toContain('index.html');
   expect(hrefs).toContain('airborne.html');
   expect(hrefs).toContain('automotive.html');
+  expect(hrefs).toContain('field.html');
 
   // The current page is marked.
   await expect(page.locator('.site-nav a.is-current')).toHaveText('Aerospace');

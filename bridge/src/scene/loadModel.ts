@@ -33,7 +33,10 @@ export type PartGroup =
   | 'arm' | 'motor' | 'prop' | 'esc' | 'payload'
   // vehicle
   | 'body' | 'panel' | 'door' | 'glass' | 'light' | 'chassis'
-  | 'drive' | 'system' | 'wheel' | 'brake' | 'susp' | 'interior';
+  | 'drive' | 'system' | 'wheel' | 'brake' | 'susp' | 'interior'
+  // quadruped
+  | 'frame' | 'head' | 'compute' | 'hip' | 'knee'
+  | 'upperleg' | 'lowerleg' | 'foot';
 
 export interface EnginePart {
   object: Object3D;

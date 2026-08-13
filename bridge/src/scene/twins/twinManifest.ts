@@ -83,12 +83,16 @@ export const TWINS: Record<TwinId, TwinDef> = {
   },
   quadruped: {
     id: 'quadruped',
-    url: null,
+    url: 'models/twins/quadruped.glb',
     presentationScale: 4.4,
     accent: { primary: '#A8FF5A', secondary: '#FFD84C' },
-    labelsRight: [],
-    labelsLeft: [],
-    idleClips: [],
+    labelsRight: [
+      'stereo cameras', 'LiDAR', 'compute module', 'battery', 'payload rail',
+    ],
+    labelsLeft: [
+      'hip actuator', 'upper-leg actuator', 'knee actuator', 'foot force sensor', 'IMU',
+    ],
+    idleClips: ['QRP_WalkCycle', 'QRP_SensorScan'],
     baseRotation: [-90, 0, 0],
   },
   humanoid: {
@@ -133,8 +137,8 @@ export const TWIN_CAM: Record<TwinId, { hero: CamPreset; technical: CamPreset }>
     technical: { tilt: 56, roll: 62, radius: 23.0 },
   },
   quadruped: {
-    hero: { tilt: 76, roll: 30, radius: 18.0 },
-    technical: { tilt: 70, roll: 26, radius: 20.0 },
+    hero: { tilt: 62, roll: 62, radius: 18.0 },
+    technical: { tilt: 58, roll: 56, radius: 20.0 },
   },
   humanoid: {
     hero: { tilt: 82, roll: 22, radius: 20.0 },

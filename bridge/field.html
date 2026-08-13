@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <title>BRIDGE Twin | Field Robotics</title>
+    <link rel="icon" href="/bridge-logo.svg" type="image/svg+xml" />
+    <meta
+      name="description"
+      content="A live digital twin of an industrial inspection quadruped - gait and contact forces, actuator health, terrain response."
+    />
+  </head>
+  <body data-page="field">
+    <!-- The persistent WebGL stage. One canvas for the whole page; sections
+         change the scene state, never the renderer. -->
+    <div class="stage-layer" aria-hidden="true">
+      <canvas id="stage-canvas"></canvas>
+      <div id="lens-layer" class="lens-layer"></div>
+    </div>
+
+    <div id="loading" class="loading" role="status" aria-live="polite">
+      <span class="loading__bar"></span>
+      <span class="loading__text">Loading field robot twin</span>
+    </div>
+
+    <main id="app"></main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

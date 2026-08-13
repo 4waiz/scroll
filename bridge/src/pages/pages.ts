@@ -254,10 +254,90 @@ const AUTOMOTIVE: PageDef = {
   ],
 };
 
+/* -------------------------------------------------------------------------- */
+/* field robotics - the inspection quadruped                                   */
+/* -------------------------------------------------------------------------- */
+
+const FIELD_FEATURES: FeatureSection[] = [
+  {
+    id: 'gait',
+    heading: 'Gait and contact',
+    lead: 'Foot placement, contact force and slip resolved per leg, so a lost foothold is visible the moment it happens.',
+    bullets: ['Per-foot contact force', 'Slip and stumble detection', 'Gait phase tracking'],
+    accent: 'lime',
+    demo: 'clockDemo',
+    code: `const robot = bridge.twin('field-04');
+
+robot.stream([
+  'foot.*.force',
+  'gait.phase',
+  'imu.orientation'
+]);`,
+  },
+  {
+    id: 'actuators',
+    heading: 'Actuator health',
+    lead: 'Torque, temperature and backlash across all twelve joints, compared leg to leg and against the fleet baseline.',
+    bullets: ['Per-joint torque', 'Thermal derating', 'Backlash trend'],
+    accent: 'yellow',
+    demo: 'staggeringDemo',
+    code: `robot.compare('joint.*', {
+  metric: 'torque.rms',
+  baseline: 'fleet',
+  alertOn: 'deviation > 2σ'
+});`,
+  },
+  {
+    id: 'terrain',
+    heading: 'Terrain response',
+    lead: 'Body attitude against ground profile, so you can see how the machine reacts to what it walked onto.',
+    bullets: ['Ground profile estimate', 'Body attitude response', 'Route replay'],
+    accent: 'green',
+    demo: 'scrollObserverDemo',
+    code: `robot.observe('terrain', {
+  window: 'route-12',
+  align: 'body.attitude'
+});`,
+  },
+];
+
+const FIELD: PageDef = {
+  slug: 'field',
+  href: 'field.html',
+  navLabel: 'Field robotics',
+  title: 'BRIDGE Twin | Field Robotics',
+  description:
+    'A live digital twin of an industrial inspection quadruped — gait and contact forces, actuator health, terrain response.',
+  twin: 'quadruped',
+  live: true,
+  hero: {
+    eyebrow: 'Field robotics',
+    heading: ['Every joint.', 'Every foothold.', 'Accounted for.'],
+    lead: 'Track actuator health, contact forces and terrain response across',
+    typed: ['all twelve joints', 'every foothold', 'the whole route', 'the entire fleet'],
+    install: 'npm i @bridge/twin',
+    cta: 'Read the docs',
+  },
+  technical: {
+    heading: ['Every joint.', 'Every foothold.', 'Accounted for.'],
+    lead: 'Track actuator health, contact forces and terrain response across the complete machine.',
+  },
+  features: FIELD_FEATURES,
+  stages: [
+    { id: 'hero', kind: 'hero', vh: 3, theme: 'dark', twin: 'quadruped' },
+    { id: 'teardown', kind: 'technical', vh: 4, theme: 'light', twin: 'quadruped' },
+    ...FIELD_FEATURES.map((f): PageStage => ({
+      id: f.id, kind: 'feature', vh: 1, theme: 'dark', twin: 'quadruped',
+    })),
+    { id: 'docs', kind: 'docs', vh: 1, theme: 'dark', twin: 'quadruped' },
+  ],
+};
+
 export const PAGES: Record<string, PageDef> = {
   index: HOME,
   airborne: AIRBORNE,
   automotive: AUTOMOTIVE,
+  field: FIELD,
 };
 
 /** Header links - only pages whose machine actually exists. */

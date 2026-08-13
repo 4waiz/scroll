@@ -10,6 +10,7 @@ const pages = {
   index: resolve(__dirname, 'index.html'),
   airborne: resolve(__dirname, 'airborne.html'),
   automotive: resolve(__dirname, 'automotive.html'),
+  field: resolve(__dirname, 'field.html'),
 };
 
 export default defineConfig({
