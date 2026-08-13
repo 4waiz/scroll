@@ -18,8 +18,10 @@ import {
   STAGES, STATE_ROUTES,
 } from './content';
 import { createStage, observeSize } from './scene/createScene';
-import { loadEngine, projectLens, type EngineModel, type LensProjection } from './scene/loadModel';
+import { projectLens, type LensProjection } from './scene/loadModel';
 import { ModelController } from './scene/modelController';
+import { TwinManager } from './scene/twins/TwinManager';
+import { createTwinLabels } from './scene/twins/twinLabels';
 import {
   ScrollController, clamp01, prefersReducedMotion, startLoop,
 } from './scene/scrollController';
@@ -43,8 +45,8 @@ const DEMOS: Record<string, DemoFactory> = {
   staggeringDemo, svgDemo, draggableDemo, clockDemo, responsiveDemo,
 };
 
-/* public/ is served at the app base, both in dev and in the build. */
-const MODEL_URL = `${import.meta.env.BASE_URL}models/bridge-engine.glb`;
+/* Model URLs live in scene/twins/twinManifest.ts; TwinManager resolves them
+   against the app base for both dev and the build. */
 
 /* -------------------------------------------------------------------------- */
 
@@ -66,20 +68,22 @@ async function main(): Promise<void> {
   const stage = createStage(canvas);
   const overlay = new LensOverlay(document.getElementById('lens-layer') ?? app);
 
-  // ---- model ------------------------------------------------------------
-  let model: EngineModel;
-  try {
-    model = await loadEngine(MODEL_URL, (f) => {
-      if (loader) loader.style.setProperty('--progress', String(f));
-    });
-  } catch (err) {
+  // ---- twins ------------------------------------------------------------
+  // The hero's engine loads up front; every other machine is fetched lazily,
+  // a section ahead of where it is needed.
+  const twins = new TwinManager(stage.orient);
+  const heroTwin = await twins.request('ge9x');
+  if (!heroTwin) {
     if (loader) {
       loader.classList.add('is-error');
       loader.textContent = 'Could not load the engine model.';
     }
-    throw err;
+    throw new Error('hero twin failed to load');
   }
-  const controller = new ModelController(stage, model);
+  twins.setActive('ge9x');
+  const model = heroTwin.model;
+  const controller = new ModelController(stage, twins);
+  const labels = createTwinLabels(page.toolboxLabels);
 
   // ---- lens demos -------------------------------------------------------
   const slotIds = ['hero', ...FEATURES.map((f) => f.id)];
@@ -144,6 +148,17 @@ async function main(): Promise<void> {
     const p = reduced ? (forcedP ?? REDUCED_MOTION_P) : (forcedP ?? frame.progress);
 
     resolveState(p, state);
+
+    // ---- active machine -------------------------------------------------
+    // Each stage declares its twin. The next stage's asset is prefetched so a
+    // machine is already in memory by the time you scroll into its section.
+    const stageDef = STAGES[frame.activeIndex];
+    if (stageDef) {
+      twins.setActive(stageDef.twin);
+      const next = STAGES[frame.activeIndex + 1];
+      if (next) twins.prefetch(next.twin);
+    }
+    twins.update(reduced ? 0 : dt);
     // Responsive framing: the keyframed camera distances are authored for the
     // desktop reference width. On narrower viewports pull back so the engine
     // still fits horizontally instead of being cropped by the screen edges.
@@ -182,7 +197,6 @@ async function main(): Promise<void> {
     }
 
     // ---- which demo is on screen ---------------------------------------
-    const stageDef = STAGES[frame.activeIndex];
     const wantSlot =
       stageDef?.kind === 'feature' ? stageDef.id
         : stageDef?.kind === 'hero' ? 'hero'
@@ -208,8 +222,15 @@ async function main(): Promise<void> {
     }
 
     // ---- toolbox leader labels + modular part labels --------------------
-    page.toolboxLabels.style.opacity = String(state.labels);
-    page.toolboxLabels.style.visibility = state.labels < 0.02 ? 'hidden' : 'visible';
+    // Leader labels are anchored to real components on the active machine and
+    // reprojected every frame, so they survive explode and camera moves.
+    labels.setTwin(state.labels > 0.02 ? twins.active : null);
+    labels.update(
+      stage.camera,
+      canvas.clientWidth || window.innerWidth,
+      canvas.clientHeight || window.innerHeight,
+      state.labels,
+    );
 
     page.partLabels.style.opacity = String(state.partLabels);
     page.partLabels.style.visibility = state.partLabels < 0.02 ? 'hidden' : 'visible';
@@ -313,7 +334,10 @@ const LABEL_OFFSETS: [number, number][] = [
   [74, -30], [86, 14], [-96, -34], [92, 46], [-90, 30], [78, -62],
 ];
 
-function collectPartLabels(page: PageRefs, model: EngineModel): PartLabelView[] {
+function collectPartLabels(
+  page: PageRefs,
+  model: import('./scene/loadModel').EngineModel,
+): PartLabelView[] {
   return PART_LABELS.map((spec, i) => ({
     el: page.partLabels.querySelector<HTMLElement>(`[data-part="${spec.part}"]`)!,
     target: model.byName.get(spec.part)?.object ?? null,

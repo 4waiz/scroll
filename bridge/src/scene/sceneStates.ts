@@ -106,34 +106,55 @@ export const KEYFRAMES: Keyframe[] = [
     lens: 0.55,
   }),
 
-  /* ---- toolbox: 4 viewports, p 0.15 -> 0.30 ---------------------------- */
+  /* ---- Section 2: airborne twin, 4 viewports, p 0.15 -> 0.30 ----------- */
+  /* The drone replaces the GE9X here, so the engine is no longer repeated    */
+  /* straight after the hero. Explode values are in the drone's own metres.   */
 
-  // D. hand over to the light technical view, running lower-left to upper-right
-  //    with the lens at the bottom left (screenshot 5)
+  // D. enters assembled, three-quarter from above
   light({
     p: 0.15,
-    tilt: 58, roll: 14, camRoll: 42, radius: 27.0,
-    scale: 0.84,
-    explode: { shell: 4.2, gear: 0.8, internal: 0.5, pod: 0.4 },
-    labels: 1,
+    tilt: 38, roll: 22, camRoll: 0, radius: 19.0,
+    scale: 1.0,
+    labels: 0.35,
   }),
 
-  // E. swings toward vertical (screenshot 6)
+  // E. rotates into the technical line-art view
   light({
-    p: 0.21,
-    tilt: 34, roll: 10, camRoll: 14, radius: 25.5,
-    scale: 0.88, pos: [0.6, 0, 0],
-    explode: { shell: 2.6, gear: 0.5, internal: 0.3 },
+    p: 0.19,
+    tilt: 31, roll: -12, camRoll: 0, radius: 18.4,
+    scale: 1.0,
     labels: 1,
   }),
 
-  // F. lays down horizontal, lens to the right (screenshot 7)
+  // F. shell, battery and avionics separate
+  light({
+    p: 0.23,
+    tilt: 42, roll: 16, camRoll: 0, radius: 21.0,
+    scale: 0.98,
+    explode: { shell: 0.10, battery: 0.13, avionics: 0.05, gimbal: 0.07 },
+    labels: 1,
+  }),
+
+  // G. arms, motors and propellers separate - the full exploded read
+  light({
+    p: 0.27,
+    tilt: 46, roll: 34, camRoll: 0, radius: 24.5,
+    scale: 0.94,
+    explode: {
+      shell: 0.14, battery: 0.18, avionics: 0.08, gimbal: 0.12,
+      arm: 0.16, motor: 0.13, prop: 0.20, esc: 0.09,
+      gear: 0.10, sensor: 0.10, payload: 0.10,
+    },
+    labels: 1,
+  }),
+
+  // H. partially reassembles before handing over to the feature sections
   light({
     p: 0.30,
-    tilt: 88, roll: 6, camRoll: -6, radius: 26.0,
-    scale: 0.86, pos: [0, -0.3, 0],
-    explode: { shell: 1.0 },
-    labels: 0.35,
+    tilt: 40, roll: 44, camRoll: 0, radius: 21.5,
+    scale: 0.96,
+    explode: { shell: 0.05, battery: 0.06, arm: 0.05, prop: 0.07 },
+    labels: 0.3,
   }),
 
   /* ---- eight feature sections, dead-on, constant scale ------------------ */

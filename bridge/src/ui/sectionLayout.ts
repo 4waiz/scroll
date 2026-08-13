@@ -156,26 +156,13 @@ function buildHero(sticky: HTMLElement): HTMLElement {
 
 function buildToolbox(sticky: HTMLElement): HTMLElement {
   const c = el('div', 'container stage-grid');
-  c.appendChild(textBlock(TOOLBOX.heading, TOOLBOX.lead, undefined, undefined, 'light'));
-
+  c.appendChild(textBlock(TOOLBOX.heading.split('\n'), TOOLBOX.lead,
+                          undefined, undefined, 'light'));
+  // Leader labels are no longer static markup: they are driven by
+  // scene/twins/twinLabels.ts from the active machine's 3D anchors, so they
+  // track the model through explode and camera moves. This element is kept as
+  // the mount point for that layer.
   const labels = el('div', 'toolbox-labels');
-
-  const left = el('ul', 'leader leader--left');
-  TOOLBOX.labelsLeft.forEach((label, i) => {
-    const li = el('li');
-    li.innerHTML = `<span class="leader__text">${label}</span><i class="leader__line" style="width:${120 + i * 66}px"></i>`;
-    left.appendChild(li);
-  });
-
-  const right = el('ul', 'leader leader--right');
-  TOOLBOX.labelsRight.forEach((label, i) => {
-    const li = el('li');
-    const w = 40 + (TOOLBOX.labelsRight.length - i) * 52;
-    li.innerHTML = `<i class="leader__line" style="width:${w}px"></i><span class="leader__text">${label}</span>`;
-    right.appendChild(li);
-  });
-
-  labels.append(left, right);
   c.appendChild(labels);
   sticky.appendChild(c);
   return labels;

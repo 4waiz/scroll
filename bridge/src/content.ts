@@ -91,12 +91,17 @@ export const HERO = {
 /* light "teardown" section                                                    */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Section 2 - the airborne twin.
+ *
+ * This section used to re-show the GE9X; it now introduces the inspection
+ * drone, so the engine is no longer repeated straight after the hero. Its
+ * leader labels come from the twin manifest (they are anchored to real
+ * components), not from this file.
+ */
 export const TOOLBOX = {
-  heading: 'Every component, digitally paired',
-  lead: 'From the fan case to the tail bearing, each part carries its own live state, tolerances and service history.',
-  /** leader-line labels, drawn bottom-left and top-right of the model */
-  labelsLeft: ['fan', 'booster', 'gearbox', 'bearings', 'nacelle'],
-  labelsRight: ['exhaust', 'turbine', 'combustor', 'hpc', 'bleed', 'inlet'],
+  heading: 'Every airborne\nsystem\ndigitally paired',
+  lead: 'From the flight computer to each motor and sensor, every component carries live state, calibration and service history.',
 } as const;
 
 /* -------------------------------------------------------------------------- */
@@ -344,6 +349,8 @@ export const FOOTER = {
 /* page structure                                                              */
 /* -------------------------------------------------------------------------- */
 
+import type { TwinId } from './scene/twins/twinManifest';
+
 export type StageKind = 'hero' | 'toolbox' | 'feature' | 'modular' | 'sponsors' | 'docs';
 
 export interface StageDef {
@@ -352,18 +359,23 @@ export interface StageDef {
   /** height in viewport units - sticky stages are taller than 1 */
   vh: number;
   theme: 'dark' | 'light';
+  /**
+   * Which machine this stage shows. Sections whose twin has not been built yet
+   * stay on the GE9X, so the page never has an empty stage.
+   */
+  twin: TwinId;
 }
 
 /** 3 + 4 + 8x1 + 4 + 1 + 1 = 21 viewports. */
 export const STAGES: StageDef[] = [
-  { id: 'hero', kind: 'hero', vh: 3, theme: 'dark' },
-  { id: 'toolbox', kind: 'toolbox', vh: 4, theme: 'light' },
+  { id: 'hero', kind: 'hero', vh: 3, theme: 'dark', twin: 'ge9x' },
+  { id: 'toolbox', kind: 'toolbox', vh: 4, theme: 'light', twin: 'drone' },
   ...FEATURES.map((f): StageDef => ({
-    id: f.id, kind: 'feature', vh: 1, theme: 'dark',
+    id: f.id, kind: 'feature', vh: 1, theme: 'dark', twin: 'ge9x' as TwinId,
   })),
-  { id: 'modular', kind: 'modular', vh: 4, theme: 'light' },
-  { id: 'sponsors', kind: 'sponsors', vh: 1, theme: 'dark' },
-  { id: 'docs', kind: 'docs', vh: 1, theme: 'dark' },
+  { id: 'modular', kind: 'modular', vh: 4, theme: 'light', twin: 'ge9x' },
+  { id: 'sponsors', kind: 'sponsors', vh: 1, theme: 'dark', twin: 'ge9x' },
+  { id: 'docs', kind: 'docs', vh: 1, theme: 'dark', twin: 'ge9x' },
 ];
 
 /**

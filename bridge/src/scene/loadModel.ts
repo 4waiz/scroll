@@ -14,13 +14,23 @@
  * here and drifting.
  */
 
-import { Box3, Mesh, Object3D, Sphere, Vector3 } from 'three';
+import { type AnimationClip, Box3, Mesh, Object3D, Sphere, Vector3 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
+/**
+ * Part groups across the whole twin family. The GE9X contributes the first
+ * row; the drone (and later machines) contribute their own. Groups are authored
+ * in Blender and read from glTF extras, so this union is the single place they
+ * are declared for the web side.
+ */
 export type PartGroup =
+  // GE9X
   | 'front' | 'housing' | 'gear' | 'pod' | 'shell'
-  | 'internal' | 'detail' | 'led' | 'rear';
+  | 'internal' | 'detail' | 'led' | 'rear'
+  // drone
+  | 'core' | 'avionics' | 'battery' | 'sensor' | 'gimbal'
+  | 'arm' | 'motor' | 'prop' | 'esc' | 'payload';
 
 export interface EnginePart {
   object: Object3D;
@@ -39,12 +49,20 @@ export interface EngineModel {
   parts: EnginePart[];
   byName: Map<string, EnginePart>;
   byGroup: Map<PartGroup, EnginePart[]>;
-  /** the disc the DOM lens overlay is projected onto */
+  /**
+   * Label anchors exported from Blender as ANCHOR_* empties. Keyed by the
+   * readable label ("flight computer"), value is the node whose world position
+   * gets projected to screen space each frame.
+   */
+  anchors: Map<string, Object3D>;
+  /** the disc the DOM lens overlay is projected onto (GE9X only) */
   display: Object3D | null;
   /** display radius in model units, from its bounding sphere */
   displayRadius: number;
   /** bounding sphere of the assembled model, used to frame the camera */
   bounds: Sphere;
+  /** glTF animation clips, if the asset carries any */
+  clips: AnimationClip[];
 }
 
 /** Blender's Y-up conversion maps its +Z barrel axis onto glTF +Y. */
@@ -81,8 +99,18 @@ export async function loadEngine(url: string, onProgress?: (f: number) => void):
   const parts: EnginePart[] = [];
   const byName = new Map<string, EnginePart>();
   const byGroup = new Map<PartGroup, EnginePart[]>();
+  const anchors = new Map<string, Object3D>();
 
   root.traverse((o) => {
+    // Label anchors are empties, so they must be picked up before the mesh
+    // filter below drops every non-mesh node.
+    const extra = (o.userData ?? {}) as Record<string, unknown>;
+    if (typeof extra.anchor === 'string') {
+      anchors.set(extra.anchor, o);
+    } else if (o.name.startsWith('ANCHOR_')) {
+      anchors.set(o.name.slice('ANCHOR_'.length).replace(/_/g, ' '), o);
+    }
+
     if (!(o as Mesh).isMesh) return;
     const extras = (o.userData ?? {}) as Record<string, unknown>;
     const group = (typeof extras.grp === 'string' ? extras.grp : 'detail') as PartGroup;
@@ -119,7 +147,11 @@ export async function loadEngine(url: string, onProgress?: (f: number) => void):
   const bounds = new Sphere();
   box.getBoundingSphere(bounds);
 
-  return { root, parts, byName, byGroup, display, displayRadius, bounds };
+  return {
+    root, parts, byName, byGroup, anchors,
+    display, displayRadius, bounds,
+    clips: gltf.animations ?? [],
+  };
 }
 
 /* -------------------------------------------------------------------------- */

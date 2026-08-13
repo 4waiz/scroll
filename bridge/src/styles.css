@@ -647,6 +647,76 @@ svg { display: block; }
   transition: opacity 200ms ease;
 }
 
+/* --------------------------------------------------------------------------
+   twin labels - anchored to 3D components, reprojected every frame
+   -------------------------------------------------------------------------- */
+
+.twin-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font-code);
+  font-size: var(--text-xs);
+  transition: opacity 200ms ease;
+}
+
+.twin-labels__lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.twin-label__leader {
+  fill: none;
+  stroke: #696561;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.twin-labels__col {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.twin-labels__col--left {
+  left: 0;
+  bottom: 92px;
+  align-items: flex-start;
+}
+
+.twin-labels__col--right {
+  right: 0;
+  top: 132px;
+  align-items: flex-end;
+}
+
+.twin-label {
+  color: #696561;
+  white-space: nowrap;
+  line-height: 1.5;
+  transition: opacity 140ms ease;
+}
+
+.twin-label.is-hidden { opacity: 0.15; }
+
+.is-light .twin-label { color: #5b5651; }
+.is-light .twin-label__leader { stroke: #8a8580; }
+
+/* On stacked layouts the model shares the column with the copy, so only the
+   primary labels stay - the rest would sit on top of the heading. */
+@media (max-width: 1100px) {
+  .twin-labels__col--right { top: auto; bottom: 92px; }
+  .twin-label:nth-child(n + 4) { display: none; }
+}
+
+@media (max-width: 700px) {
+  .twin-labels { display: none; }
+}
+
 .leader {
   position: absolute;
   display: flex;
