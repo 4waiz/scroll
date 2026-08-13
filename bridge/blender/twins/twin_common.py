@@ -258,6 +258,115 @@ def add_tube(bm, M, r_in, r_out, half_len, seg=32, axis='Z'):
     lathe(bm, prof, seg=seg, M=(M @ rot))
 
 
+def sweep(bm, frames, section, caps=True):
+    """
+    Sweep a 2D cross-section along a list of 4x4 frames.
+
+    `section` is a closed polygon of (x, y) points in the frame's local XY
+    plane. This is the workhorse for arms, limbs, struts and blades - anything
+    that should read as a continuous surface rather than a chain of boxes.
+    """
+    rings = [[bm.verts.new(M @ Vector((px, py, 0.0))) for (px, py) in section]
+             for M in frames]
+    n = len(section)
+    for i in range(len(rings) - 1):
+        for k in range(n):
+            k2 = (k + 1) % n
+            try:
+                bm.faces.new((rings[i][k], rings[i][k2],
+                              rings[i + 1][k2], rings[i + 1][k]))
+            except ValueError:
+                pass
+    if caps:
+        for ring, flip in ((rings[0], True), (rings[-1], False)):
+            try:
+                bm.faces.new(list(reversed(ring)) if flip else ring)
+            except ValueError:
+                pass
+    return rings
+
+
+def rect_section(w, h, r=0.0, corner_seg=4):
+    """Rounded-rectangle cross-section, half-extents w/h, corner radius r."""
+    r = min(r, w * 0.98, h * 0.98)
+    if r <= 1e-6:
+        return [(-w, -h), (w, -h), (w, h), (-w, h)]
+    pts = []
+    for cx, cy, a0 in ((w - r, -(h - r), -pi / 2), (w - r, h - r, 0.0),
+                       (-(w - r), h - r, pi / 2), (-(w - r), -(h - r), pi)):
+        for i in range(corner_seg + 1):
+            a = a0 + (pi / 2) * (i / corner_seg)
+            pts.append((cx + r * cos(a), cy + r * sin(a)))
+    return pts
+
+
+def airfoil_section(chord, thickness, n=10):
+    """
+    Simple symmetric airfoil, chord along local +X, thickness along +Y.
+
+    Rounded leading edge, tapered trailing edge - enough to read as a blade
+    rather than a flat slab at web render sizes.
+    """
+    pts = []
+    for i in range(n + 1):                       # upper surface, LE -> TE
+        t = i / n
+        yt = thickness * (1.4845 * math.sqrt(max(t, 0.0)) - 0.63 * t
+                          - 1.758 * t ** 2 + 1.4215 * t ** 3 - 0.5075 * t ** 4)
+        pts.append((-chord * 0.5 + chord * t, yt))
+    for i in range(n - 1, 0, -1):                # lower surface, TE -> LE
+        t = i / n
+        yt = thickness * (1.4845 * math.sqrt(max(t, 0.0)) - 0.63 * t
+                          - 1.758 * t ** 2 + 1.4215 * t ** 3 - 0.5075 * t ** 4)
+        pts.append((-chord * 0.5 + chord * t, -yt))
+    return pts
+
+
+def frames_along(points, up=Vector((0, 0, 1)), scales=None, rolls=None):
+    """
+    Build sweep frames following a polyline, each oriented so local +Z runs
+    along the path. `scales` and `rolls` optionally vary per point.
+    """
+    pts = [Vector(p) for p in points]
+    out = []
+    for i, p in enumerate(pts):
+        if i == 0:
+            d = (pts[1] - pts[0])
+        elif i == len(pts) - 1:
+            d = (pts[-1] - pts[-2])
+        else:
+            d = (pts[i + 1] - pts[i - 1])
+        d.normalize()
+        ref = up if abs(d.dot(up)) < 0.95 else Vector((1, 0, 0))
+        x = ref.cross(d).normalized()
+        y = d.cross(x).normalized()
+        M = Matrix((
+            (x.x, y.x, d.x, p.x),
+            (x.y, y.y, d.y, p.y),
+            (x.z, y.z, d.z, p.z),
+            (0.0, 0.0, 0.0, 1.0),
+        ))
+        if rolls:
+            M = M @ Matrix.Rotation(rolls[i], 4, 'Z')
+        if scales:
+            s = scales[i]
+            M = M @ Matrix.Diagonal((s, s, 1.0, 1.0))
+        out.append(M)
+    return out
+
+
+def add_rounded_box(bm, M, sx, sy, sz, r=0.01, corner_seg=3, end_seg=3):
+    """Box with rounded vertical edges and a chamfered top/bottom."""
+    frames = []
+    for i in range(end_seg + 1):
+        t = i / end_seg
+        z = -sz + 2 * sz * t
+        # ease the profile in at both ends so the caps read as chamfers
+        e = min(t, 1 - t) / 0.5
+        k = 1.0 - 0.12 * (1.0 - min(1.0, e))
+        frames.append(M @ Matrix.Translation((0, 0, z)) @ Matrix.Diagonal((k, k, 1, 1)))
+    sweep(bm, frames, rect_section(sx, sy, r, corner_seg))
+
+
 def radial(count, radius, z=0.0, phase=0.0):
     for i in range(count):
         a = phase + TAU * i / count
@@ -329,6 +438,24 @@ def anchor(name, loc, coll, parent=None):
     return e
 
 
+def attach(ob, parent):
+    """
+    Parent `ob` to `parent` without moving it.
+
+    Assigning `.parent` from Python leaves matrix_parent_inverse at identity,
+    so the parent's transform is *added* to the child's - an object already
+    positioned in world space ends up at double the offset.
+
+    The inverse must come from the parent's *world* matrix, not its location:
+    for a nested chain (gimbal yaw -> roll -> pitch) every ancestor's offset
+    compounds. view_layer.update() forces those world matrices to be current.
+    """
+    bpy.context.view_layer.update()
+    ob.parent = parent
+    ob.matrix_parent_inverse = parent.matrix_world.inverted()
+    return ob
+
+
 def pivot(name, loc, coll, parent=None):
     """Animation pivot empty (propeller hub, joint, gimbal axis...)."""
     e = bpy.data.objects.new(name, None)
@@ -337,8 +464,7 @@ def pivot(name, loc, coll, parent=None):
     e.location = loc
     coll.objects.link(e)
     if parent is not None:
-        e.parent = parent
-        e.matrix_parent_inverse = parent.matrix_world.inverted()
+        attach(e, parent)
     return e
 
 
