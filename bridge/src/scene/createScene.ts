@@ -136,6 +136,8 @@ export function placeCamera(
    * rotates.
    */
   shiftX = 0,
+  /** Screen-space pan as a fraction of viewport height. Positive moves down. */
+  shiftY = 0,
 ): void {
   const t = (tilt * Math.PI) / 180;
   const r = (roll * Math.PI) / 180;
@@ -159,11 +161,12 @@ export function placeCamera(
     camera.fov = fov;
     camera.updateProjectionMatrix();
   }
-  if (shiftX !== 0) {
+  if (shiftX !== 0 || shiftY !== 0) {
     const halfH = radius * Math.tan((fov * Math.PI) / 360);
     const halfW = halfH * camera.aspect;
-    // Move the camera left to push the subject right.
-    camera.translateX(-shiftX * 2 * halfW);
+    // Move the camera the opposite way to push the subject where we want it.
+    if (shiftX !== 0) camera.translateX(-shiftX * 2 * halfW);
+    if (shiftY !== 0) camera.translateY(shiftY * 2 * halfH);
   }
 }
 

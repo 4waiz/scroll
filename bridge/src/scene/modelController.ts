@@ -29,6 +29,11 @@ export class ModelController {
    * Keeps the engine clear of the left-hand text column on wide layouts.
    */
   screenShiftX = 0;
+  /**
+   * Screen-space pan as a fraction of viewport height, positive downward. Used
+   * on stacked layouts to keep the engine clear of the text block above it.
+   */
+  screenShiftY = 0;
   private idleTime = 0;
   private lastTickColor = '';
   private lastLed = -1;
@@ -65,7 +70,8 @@ export class ModelController {
     // ---- camera ---------------------------------------------------------
     placeCamera(
       stage.camera, state.tilt, state.roll, state.radius,
-      state.target, state.fov, state.camRoll, this.screenShiftX,
+      state.target, state.fov, state.camRoll,
+      this.screenShiftX, this.screenShiftY,
     );
 
     // ---- pivot ----------------------------------------------------------

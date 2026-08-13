@@ -152,7 +152,12 @@ async function main(): Promise<void> {
     // Nudge the engine right of centre so it clears the left text column. Only
     // on the two-column layout - below the stacking breakpoint the model is
     // already on its own row and should stay centred.
-    controller.screenShiftX = vw > STACK_BREAKPOINT ? 0.07 : 0;
+    const stacked = vw <= STACK_BREAKPOINT;
+    controller.screenShiftX = stacked ? 0 : 0.07;
+    // On the stacked layout the text block sits above the engine. Push the
+    // engine down so a tall heading + lead + bullet list on a short viewport
+    // cannot run into the lens.
+    controller.screenShiftY = stacked ? stackedDrop(canvas.clientHeight || window.innerHeight) : 0;
     controller.apply(state, dt, !reduced);
 
     // Background + theme follow the scene so the DOM and WebGL never disagree.
@@ -240,6 +245,19 @@ const STACK_BREAKPOINT = 1100;
  */
 function fitFactor(width: number): number {
   return Math.min(1.9, Math.max(1, STACK_BREAKPOINT / Math.max(1, width)));
+}
+
+/**
+ * How far down to push the engine on a stacked layout, as a fraction of
+ * viewport height. The text block above it is a fixed pixel height, so the
+ * shorter the viewport the larger a share it takes and the further the engine
+ * has to move to stay clear.
+ */
+function stackedDrop(height: number): number {
+  if (height >= 1000) return 0.06;
+  if (height <= 600) return 0.16;
+  // Linear between the two anchors.
+  return 0.16 - ((height - 600) / 400) * 0.10;
 }
 
 /* -------------------------------------------------------------------------- */
