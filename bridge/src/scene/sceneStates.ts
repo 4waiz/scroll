@@ -14,6 +14,7 @@ import type { PartGroup } from './loadModel';
 import type { MaterialMode } from './materials';
 import { ACCENTS, PALETTE } from '../content';
 import { progressAt, type PageDef } from '../pages/pages';
+import { TWIN_CAM } from './twins/twinManifest';
 
 export type ExplodeMap = Partial<Record<PartGroup, number>>;
 
@@ -76,30 +77,38 @@ export function buildTimeline(page: PageDef): Keyframe[] {
 
   for (const st of page.stages) {
     switch (st.kind) {
-      case 'hero':
-        out.push(dark({ p: at(st.id, 0), tilt: 7, roll: 4, radius: 17.0, rot: [0, 0, -4] }));
+      case 'hero': {
+        const h = TWIN_CAM[st.twin].hero;
         out.push(dark({
-          p: at(st.id, 0.5), tilt: 50, roll: 10, camRoll: 22, radius: 20.5,
+          p: at(st.id, 0), tilt: h.tilt, roll: h.roll, radius: h.radius,
+          camRoll: h.camRoll ?? 0, rot: [0, 0, -4],
+        }));
+        out.push(dark({
+          p: at(st.id, 0.5), tilt: h.tilt + 40, roll: h.roll - 12,
+          camRoll: (h.camRoll ?? 0) + 22, radius: h.radius * 1.2,
           pos: [0.3, -0.2, 0], spin: { gear: 40, led: 12 },
         }));
         out.push(dark({
-          p: at(st.id, 1), tilt: 64, roll: 20, camRoll: 36, radius: 24.5,
+          p: at(st.id, 1), tilt: h.tilt + 54, roll: h.roll + 6,
+          camRoll: (h.camRoll ?? 0) + 36, radius: h.radius * 1.44,
           pos: [0, 0.3, 0], scale: 0.95,
           explode: { shell: 3.6, detail: 0.5 }, spin: { gear: 90, led: 22 }, lens: 0.55,
         }));
         break;
+      }
 
-      case 'technical':
+      case 'technical': {
+        const c = TWIN_CAM[st.twin].technical;
         // Five beats: enters assembled, turns to line-art, shell separates,
         // full explode, partial reassemble before handing over.
-        out.push(light({ p: at(st.id, 0), tilt: 38, roll: 22, radius: 19.0, labels: 0.35 }));
-        out.push(light({ p: at(st.id, 0.27), tilt: 31, roll: -12, radius: 18.4, labels: 1 }));
+        out.push(light({ p: at(st.id, 0), tilt: c.tilt, roll: c.roll, radius: c.radius, labels: 0.35 }));
+        out.push(light({ p: at(st.id, 0.27), tilt: c.tilt - 7, roll: c.roll - 34, radius: c.radius * 0.97, labels: 1 }));
         out.push(light({
-          p: at(st.id, 0.53), tilt: 42, roll: 16, radius: 21.0, scale: 0.98,
+          p: at(st.id, 0.53), tilt: c.tilt + 4, roll: c.roll - 6, radius: c.radius * 1.11, scale: 0.98,
           explode: { shell: 0.10, battery: 0.13, avionics: 0.05, gimbal: 0.07 }, labels: 1,
         }));
         out.push(light({
-          p: at(st.id, 0.8), tilt: 46, roll: 34, radius: 24.5, scale: 0.94,
+          p: at(st.id, 0.8), tilt: c.tilt + 8, roll: c.roll + 12, radius: c.radius * 1.29, scale: 0.94,
           explode: {
             shell: 0.14, battery: 0.18, avionics: 0.08, gimbal: 0.12,
             arm: 0.16, motor: 0.13, prop: 0.20, esc: 0.09,
@@ -108,10 +117,11 @@ export function buildTimeline(page: PageDef): Keyframe[] {
           labels: 1,
         }));
         out.push(light({
-          p: at(st.id, 1), tilt: 40, roll: 44, radius: 21.5, scale: 0.96,
+          p: at(st.id, 1), tilt: c.tilt + 2, roll: c.roll + 22, radius: c.radius * 1.13, scale: 0.96,
           explode: { shell: 0.05, battery: 0.06, arm: 0.05, prop: 0.07 }, labels: 0.3,
         }));
         break;
+      }
 
       case 'feature':
         out.push(dark({

@@ -29,6 +29,15 @@ export interface TwinDef {
   labelsLeft: string[];
   /** baked glTF clips to run continuously while the twin is on screen */
   idleClips: string[];
+  /**
+   * Degrees applied to the twin wrapper to correct its base orientation.
+   *
+   * The stage's `orient` group turns the engine so its barrel faces the camera.
+   * That is right for a turbofan and wrong for everything else - it stands an
+   * upright machine on its nose. The engine keeps it; every other twin cancels
+   * it with -90 about X so it sits on its wheels, feet or landing gear.
+   */
+  baseRotation: [number, number, number];
 }
 
 export const TWINS: Record<TwinId, TwinDef> = {
@@ -40,6 +49,7 @@ export const TWINS: Record<TwinId, TwinDef> = {
     labelsRight: ['exhaust', 'turbine', 'combustor', 'hpc', 'bleed', 'inlet'],
     labelsLeft: ['fan', 'booster', 'gearbox', 'bearings', 'nacelle'],
     idleClips: [],
+    baseRotation: [0, 0, 0],
   },
   drone: {
     id: 'drone',
@@ -54,15 +64,22 @@ export const TWINS: Record<TwinId, TwinDef> = {
     ],
     labelsLeft: ['airframe', 'powertrain', 'navigation', 'payload', 'telemetry'],
     idleClips: ['DRN_PropellerSpin', 'DRN_GimbalScan'],
+    baseRotation: [-90, 0, 0],
   },
   vehicle: {
     id: 'vehicle',
-    url: null,
-    presentationScale: 1.7,
+    url: 'models/twins/vehicle.glb',
+    // 4.55 m long vs the engine's ~11 m: scaled up so it reads at a comparable
+    // size on screen and in the fleet composition.
+    presentationScale: 2.4,
     accent: { primary: '#6495F5', secondary: '#FF8A42' },
-    labelsRight: [],
-    labelsLeft: [],
-    idleClips: [],
+    labelsRight: [
+      'lidar', 'camera', 'radar', 'battery pack',
+      'front drive unit', 'rear drive unit', 'inverter',
+    ],
+    labelsLeft: ['chassis', 'suspension', 'brake', 'steering', 'thermal loop'],
+    idleClips: ['CAR_LidarSpin', 'CAR_WheelSpin'],
+    baseRotation: [-90, 0, 0],
   },
   quadruped: {
     id: 'quadruped',
@@ -72,6 +89,7 @@ export const TWINS: Record<TwinId, TwinDef> = {
     labelsRight: [],
     labelsLeft: [],
     idleClips: [],
+    baseRotation: [-90, 0, 0],
   },
   humanoid: {
     id: 'humanoid',
@@ -81,6 +99,46 @@ export const TWINS: Record<TwinId, TwinDef> = {
     labelsRight: [],
     labelsLeft: [],
     idleClips: [],
+    baseRotation: [-90, 0, 0],
+  },
+};
+
+export interface CamPreset {
+  tilt: number;
+  roll: number;
+  radius: number;
+  camRoll?: number;
+}
+
+/**
+ * Camera framing per machine.
+ *
+ * `tilt` is the angle away from the model's own up axis, so a single set of
+ * numbers cannot serve the family: tilt 7 reads as "down the barrel" on the
+ * turbofan but "straight down from above" on a car. Each twin declares how it
+ * wants to be framed in a hero shot and in its technical section.
+ */
+export const TWIN_CAM: Record<TwinId, { hero: CamPreset; technical: CamPreset }> = {
+  ge9x: {
+    hero: { tilt: 7, roll: 4, radius: 17.0 },
+    technical: { tilt: 44, roll: 20, radius: 27.0, camRoll: 26 },
+  },
+  drone: {
+    hero: { tilt: 32, roll: 22, radius: 19.5 },
+    technical: { tilt: 36, roll: 20, radius: 19.0 },
+  },
+  vehicle: {
+    // Front three-quarter, slightly above the beltline.
+    hero: { tilt: 58, roll: 68, radius: 21.0 },
+    technical: { tilt: 56, roll: 62, radius: 23.0 },
+  },
+  quadruped: {
+    hero: { tilt: 76, roll: 30, radius: 18.0 },
+    technical: { tilt: 70, roll: 26, radius: 20.0 },
+  },
+  humanoid: {
+    hero: { tilt: 82, roll: 22, radius: 20.0 },
+    technical: { tilt: 78, roll: 24, radius: 22.0 },
   },
 };
 

@@ -9,6 +9,7 @@ import { defineConfig } from 'vite';
 const pages = {
   index: resolve(__dirname, 'index.html'),
   airborne: resolve(__dirname, 'airborne.html'),
+  automotive: resolve(__dirname, 'automotive.html'),
 };
 
 export default defineConfig({

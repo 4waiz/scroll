@@ -172,9 +172,92 @@ const AIRBORNE: PageDef = {
 /* registry                                                                    */
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/* automotive - the autonomous crossover                                       */
+/* -------------------------------------------------------------------------- */
+
+const VEHICLE_FEATURES: FeatureSection[] = [
+  {
+    id: 'fusion',
+    heading: 'Sensor fusion',
+    lead: 'Camera, radar and LiDAR resolved onto one clock, so perception is a single state rather than four disagreeing feeds.',
+    bullets: ['Camera and radar fusion', 'Synchronised timestamps', 'Occlusion-aware tracking'],
+    accent: 'king',
+    demo: 'staggeringDemo',
+    code: `const vehicle = bridge.twin('vehicle-01');
+
+vehicle.stream([
+  'camera.*',
+  'radar.*',
+  'lidar.points'
+]);
+
+vehicle.fuse({ clock: 'synchronised' });`,
+  },
+  {
+    id: 'energy',
+    heading: 'Battery and thermal',
+    lead: 'Pack temperature, cell balance and coolant loop state tracked module by module across the whole floor.',
+    bullets: ['Per-module cell balance', 'Coolant loop state', 'Charge and discharge limits'],
+    accent: 'orange',
+    demo: 'transformsDemo',
+    code: `vehicle.observe('battery', {
+  modules: 'all',
+  metric: 'temperature',
+  window: '5m'
+});`,
+  },
+  {
+    id: 'chassis',
+    heading: 'Chassis and wheels',
+    lead: 'Steering angle, wheel speed and suspension travel at each corner, compared against the commanded path.',
+    bullets: ['Per-corner wheel speed', 'Suspension travel', 'Steering vs path error'],
+    accent: 'sky',
+    demo: 'clockDemo',
+    code: `vehicle.stream([
+  'wheel.*.speed',
+  'suspension.*.travel',
+  'steering.angle'
+]);`,
+  },
+];
+
+const AUTOMOTIVE: PageDef = {
+  slug: 'automotive',
+  href: 'automotive.html',
+  navLabel: 'Automotive',
+  title: 'BRIDGE Twin | Automotive',
+  description:
+    'A live digital twin of an autonomous electric crossover — sensor fusion, battery and thermal state, chassis and wheel telemetry.',
+  twin: 'vehicle',
+  live: true,
+  hero: {
+    eyebrow: 'Automotive',
+    heading: ['Vehicle', 'sensor', 'fusion.'],
+    lead: 'Synchronise perception, powertrain and chassis data into one live operational model of',
+    typed: ['every corner', 'the whole pack', 'the full sensor set', 'the entire fleet'],
+    install: 'npm i @bridge/twin',
+    cta: 'Read the docs',
+  },
+  technical: {
+    heading: ['Every system', 'on the vehicle,', 'digitally paired'],
+    lead: 'From the drive units to each wheel and sensor, every component carries live state, calibration and service history.',
+  },
+  features: VEHICLE_FEATURES,
+  stages: [
+    { id: 'hero', kind: 'hero', vh: 3, theme: 'dark', twin: 'vehicle' },
+    { id: 'cutaway', kind: 'technical', vh: 4, theme: 'light', twin: 'vehicle' },
+    ...VEHICLE_FEATURES.map((f): PageStage => ({
+      id: f.id, kind: 'feature', vh: 1, theme: 'dark', twin: 'vehicle',
+    })),
+    { id: 'docs', kind: 'docs', vh: 1, theme: 'dark', twin: 'vehicle' },
+  ],
+};
+
 export const PAGES: Record<string, PageDef> = {
   index: HOME,
   airborne: AIRBORNE,
+  automotive: AUTOMOTIVE,
 };
 
 /** Header links - only pages whose machine actually exists. */

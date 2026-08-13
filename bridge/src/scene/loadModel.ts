@@ -30,7 +30,10 @@ export type PartGroup =
   | 'internal' | 'detail' | 'led' | 'rear'
   // drone
   | 'core' | 'avionics' | 'battery' | 'sensor' | 'gimbal'
-  | 'arm' | 'motor' | 'prop' | 'esc' | 'payload';
+  | 'arm' | 'motor' | 'prop' | 'esc' | 'payload'
+  // vehicle
+  | 'body' | 'panel' | 'door' | 'glass' | 'light' | 'chassis'
+  | 'drive' | 'system' | 'wheel' | 'brake' | 'susp' | 'interior';
 
 export interface EnginePart {
   object: Object3D;

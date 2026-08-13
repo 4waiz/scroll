@@ -41,6 +41,14 @@ export class TwinInstance {
     this.root = new Group();
     this.root.name = `twin:${def.id}`;
     this.root.scale.setScalar(def.presentationScale);
+    // The stage's `orient` group turns the engine so its barrel faces the
+    // camera. That is right for a turbofan and wrong for everything else - it
+    // stands an upright machine on its nose. Each twin cancels or keeps it.
+    this.root.rotation.set(
+      MathUtils.degToRad(def.baseRotation[0]),
+      MathUtils.degToRad(def.baseRotation[1]),
+      MathUtils.degToRad(def.baseRotation[2]),
+    );
     this.root.add(model.root);
 
     this.materials = new MaterialManager(model.root);
