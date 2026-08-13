@@ -12,7 +12,7 @@
  * retraces the exact same states.
  */
 
-import type { StageDef } from '../content';
+import type { PageStage } from '../pages/pages';
 
 export interface ScrollFrame {
   /** 0..1 across the whole stage track */
@@ -36,7 +36,7 @@ export interface ScrollFrame {
 }
 
 export interface StageMetrics {
-  def: StageDef;
+  def: PageStage;
   /** document offset of the stage's top edge, CSS px */
   top: number;
   /** total height of the stage, CSS px */
@@ -55,7 +55,7 @@ export class ScrollController {
   };
 
   constructor(
-    private stages: StageDef[],
+    private stages: PageStage[],
     private track: HTMLElement,
   ) {
     this.measure();

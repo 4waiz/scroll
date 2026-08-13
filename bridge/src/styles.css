@@ -420,6 +420,20 @@ svg { display: block; }
    hero extras
    -------------------------------------------------------------------------- */
 
+.eyebrow {
+  font-family: var(--font-code);
+  font-size: var(--text-xs);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--accent, var(--fg-4));
+  margin-bottom: 16px;
+}
+
+.is-light .eyebrow { color: var(--fg-6); }
+
+.site-nav a.is-current { color: var(--fg-1); }
+.is-light .site-nav a.is-current { color: var(--bg-1); }
+
 .typed { color: var(--fg-1); }
 
 .caret {

@@ -14,8 +14,7 @@ import './styles.css';
 import { Vector3 } from 'three';
 
 import {
-  ACCENTS, BUNDLE_BEATS, BUNDLE_MODULES, FEATURES, HERO, PART_LABELS,
-  STAGES, STATE_ROUTES,
+  ACCENTS, BUNDLE_BEATS, BUNDLE_MODULES, PART_LABELS,
 } from './content';
 import { createStage, observeSize } from './scene/createScene';
 import { projectLens, type LensProjection } from './scene/loadModel';
@@ -25,9 +24,12 @@ import { createTwinLabels } from './scene/twins/twinLabels';
 import {
   ScrollController, clamp01, prefersReducedMotion, startLoop,
 } from './scene/scrollController';
-import { REDUCED_MOTION_P, resolveState, type SceneState } from './scene/sceneStates';
+import {
+  REDUCED_MOTION_P, buildTimeline, resolveState, type SceneState,
+} from './scene/sceneStates';
 import { LensOverlay } from './ui/lensOverlay';
 import { buildPage, type PageRefs } from './ui/sectionLayout';
+import { currentPage, routesFor } from './pages/pages';
 
 import type { DemoFactory, DemoHandle } from './demos/types';
 import { heroDisplay } from './demos/heroDisplay';
@@ -64,33 +66,41 @@ async function main(): Promise<void> {
   const reduced = prefersReducedMotion();
   document.documentElement.classList.toggle('reduced-motion', reduced);
 
-  const page = buildPage(app);
+  const pageDef = currentPage();
+  const stages = pageDef.stages;
+  const page = buildPage(app, pageDef);
   const stage = createStage(canvas);
   const overlay = new LensOverlay(document.getElementById('lens-layer') ?? app);
 
   // ---- twins ------------------------------------------------------------
   // The hero's engine loads up front; every other machine is fetched lazily,
   // a section ahead of where it is needed.
+  // Each page owns exactly one machine, so only that asset is fetched here -
+  // no page pays for the rest of the family.
   const twins = new TwinManager(stage.orient);
-  const heroTwin = await twins.request('ge9x');
+  const heroTwin = await twins.request(pageDef.twin);
   if (!heroTwin) {
     if (loader) {
       loader.classList.add('is-error');
-      loader.textContent = 'Could not load the engine model.';
+      loader.textContent = 'Could not load the model for this page.';
     }
-    throw new Error('hero twin failed to load');
+    throw new Error(`twin "${pageDef.twin}" failed to load`);
   }
-  twins.setActive('ge9x');
+  twins.setActive(pageDef.twin);
   const model = heroTwin.model;
   const controller = new ModelController(stage, twins);
   const labels = createTwinLabels(page.toolboxLabels);
 
   // ---- lens demos -------------------------------------------------------
-  const slotIds = ['hero', ...FEATURES.map((f) => f.id)];
+  // The in-lens demos live on the engine's circular display. Machines without
+  // one (the drone) get no overlay at all - otherwise the slot renders at its
+  // default transform in the corner, because there is nothing to project onto.
+  const hasLens = model.display !== null;
+  const slotIds = hasLens ? ['hero', ...pageDef.features.map((f) => f.id)] : [];
   const demoFor: Record<string, { factory: DemoFactory; accent: string }> = {
     hero: { factory: DEMOS.heroDisplay, accent: ACCENTS.red },
   };
-  for (const f of FEATURES) {
+  for (const f of pageDef.features) {
     demoFor[f.id] = { factory: DEMOS[f.demo], accent: ACCENTS[f.accent] };
   }
   const handles = new Map<string, DemoHandle>();
@@ -104,8 +114,8 @@ async function main(): Promise<void> {
   }
 
   // ---- scroll -----------------------------------------------------------
-  const scroll = new ScrollController(STAGES, page.track);
-  const typewriter = createTypewriter(page.typedTarget, HERO.typed, reduced);
+  const scroll = new ScrollController(stages, page.track);
+  const typewriter = createTypewriter(page.typedTarget, pageDef.hero.typed, reduced);
   const partLabelViews = collectPartLabels(page, model);
 
   const stopResize = observeSize(document.documentElement, (w, h) => {
@@ -115,7 +125,8 @@ async function main(): Promise<void> {
 
   // Deterministic screenshot routes: /?state=stagger
   const requested = new URLSearchParams(location.search).get('state');
-  const forcedP = requested && requested in STATE_ROUTES ? STATE_ROUTES[requested] : null;
+  const routes = routesFor(pageDef);
+  const forcedP = requested && requested in routes ? routes[requested] : null;
 
   if (loader) {
     loader.classList.add('is-done');
@@ -139,7 +150,8 @@ async function main(): Promise<void> {
   });
 
   // ---- render loop ------------------------------------------------------
-  const state: SceneState = resolveState(0);
+  const timeline = buildTimeline(pageDef);
+  const state: SceneState = resolveState(timeline, 0);
   const proj: { current: LensProjection | null } = { current: null };
   let activeSlot: string | null = null;
 
@@ -147,15 +159,15 @@ async function main(): Promise<void> {
     const frame = scroll.read();
     const p = reduced ? (forcedP ?? REDUCED_MOTION_P) : (forcedP ?? frame.progress);
 
-    resolveState(p, state);
+    resolveState(timeline, p, state);
 
     // ---- active machine -------------------------------------------------
     // Each stage declares its twin. The next stage's asset is prefetched so a
     // machine is already in memory by the time you scroll into its section.
-    const stageDef = STAGES[frame.activeIndex];
+    const stageDef = stages[frame.activeIndex];
     if (stageDef) {
       twins.setActive(stageDef.twin);
-      const next = STAGES[frame.activeIndex + 1];
+      const next = stages[frame.activeIndex + 1];
       if (next) twins.prefetch(next.twin);
     }
     twins.update(reduced ? 0 : dt);
@@ -197,7 +209,7 @@ async function main(): Promise<void> {
     }
 
     // ---- which demo is on screen ---------------------------------------
-    const wantSlot =
+    const wantSlot = !hasLens ? null :
       stageDef?.kind === 'feature' ? stageDef.id
         : stageDef?.kind === 'hero' ? 'hero'
           : null;

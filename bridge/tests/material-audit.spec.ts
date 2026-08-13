@@ -132,7 +132,7 @@ async function audit(page: import('@playwright/test').Page, pngBase64: string): 
 test('graphite material audit @ exploded frame', async ({ page }) => {
   mkdirSync(OUT, { recursive: true });
   await page.setViewportSize(SHOT);
-  await page.goto('/?state=hero-open', { waitUntil: 'load' });
+  await page.goto('/?state=hero-end', { waitUntil: 'load' });
   await page.waitForFunction(() => document.documentElement.classList.contains('is-ready'), null, {
     timeout: 60_000,
   });

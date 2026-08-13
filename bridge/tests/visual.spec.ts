@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
-import { STATE_ROUTES } from '../src/content';
+import { PAGES, routesFor } from '../src/pages/pages';
+
+/** Home-page states, derived from that page's own stage layout. */
+const STATE_ROUTES = routesFor(PAGES.index);
 
 /**
  * Deterministic state captures.

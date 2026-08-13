@@ -9,15 +9,19 @@
  */
 
 import {
-  ACCENTS, BRAND, BUNDLE_MODULES, DOCS, FEATURES, FOOTER, HERO, MODULAR,
-  NAV_LINKS, PART_LABELS, SPONSORS, STAGES, TOOLBOX,
-  type AccentName, type StageDef,
+  ACCENTS, BRAND, BUNDLE_MODULES, DOCS, FOOTER, HERO, MODULAR,
+  PART_LABELS, SPONSORS,
+  type AccentName, type FeatureSection,
 } from '../content';
+import {
+  NAV_EXTRA, NAV_PAGES, currentPage,
+  type PageHero, type PageStage, type PageTechnical,
+} from '../pages/pages';
 import { createCodeCard, createInstallButton, type CodeCard } from './codeCards';
 import { createProgressIndicator, type ProgressIndicator } from './progressIndicator';
 
 export interface StageRefs {
-  def: StageDef;
+  def: PageStage;
   el: HTMLElement;
   sticky: HTMLElement;
   scrubber: ProgressIndicator | null;
@@ -106,12 +110,26 @@ function buildHeader(): HTMLElement {
   brand.appendChild(brandMark());
   brand.setAttribute('aria-label', `${BRAND.name} home`);
 
+  // Machine pages first, then the non-machine links. The active page is marked
+  // so the header shows where you are.
   const nav = el('nav', 'site-nav');
   const ul = el('ul');
-  for (const link of NAV_LINKS) {
+  const here = currentPage();
+  for (const page of NAV_PAGES) {
     const li = el('li');
-    const a = el('a', undefined, link);
-    a.href = '#';
+    const a = el('a', undefined, page.navLabel);
+    a.href = page.href;
+    if (page.slug === here.slug) {
+      a.classList.add('is-current');
+      a.setAttribute('aria-current', 'page');
+    }
+    li.appendChild(a);
+    ul.appendChild(li);
+  }
+  for (const link of NAV_EXTRA) {
+    const li = el('li', 'site-nav__extra');
+    const a = el('a', undefined, link.label);
+    a.href = link.href;
     li.appendChild(a);
     ul.appendChild(li);
   }
@@ -126,38 +144,39 @@ function buildHeader(): HTMLElement {
 /* stages                                                                      */
 /* -------------------------------------------------------------------------- */
 
-function buildHero(sticky: HTMLElement): HTMLElement {
+function buildHero(sticky: HTMLElement, hero: PageHero): HTMLElement {
   const c = el('div', 'container stage-grid');
 
   const block = el('div', 'text-block text-block--hero');
+  block.appendChild(el('p', 'eyebrow', hero.eyebrow));
+
   const h = el('h2');
-  h.innerHTML = HERO.heading.map((line) => `<span>${line}</span>`).join('');
+  h.innerHTML = hero.heading.map((line) => `<span>${line}</span>`).join('');
   block.appendChild(h);
 
   const p = el('p', 'lead');
-  p.innerHTML = `${HERO.lead} <span class="typed"></span><i class="caret"></i>`;
+  p.innerHTML = `${hero.lead} <span class="typed"></span><i class="caret"></i>`;
   block.appendChild(p);
 
   const actions = el('div', 'hero-actions');
-  actions.appendChild(createInstallButton(HERO.install));
+  actions.appendChild(createInstallButton(hero.install));
   const learn = el('button', 'ghost-btn');
   learn.type = 'button';
-  learn.innerHTML = `<span>${HERO.cta}</span><svg viewBox="0 0 10 12" aria-hidden="true"><path d="M5 0v10M1 6.5L5 11l4-4.5"></path></svg>`;
+  learn.innerHTML = `<span>${hero.cta}</span><svg viewBox="0 0 10 12" aria-hidden="true"><path d="M5 0v10M1 6.5L5 11l4-4.5"></path></svg>`;
   actions.appendChild(learn);
   block.appendChild(actions);
 
   const sponsor = el('div', 'hero-sponsor');
-  sponsor.innerHTML = `<span>${HERO.sponsoredBy}</span><div class="sponsor-chip" aria-label="Sponsor logo placeholder"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="15"></circle><circle cx="22" cy="22" r="7"></circle><circle cx="22" cy="22" r="1.8"></circle></svg></div>`;
+  sponsor.innerHTML = `<span>${HERO.sponsoredBy}</span><div class="sponsor-chip" aria-label="Deployment partner"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="15"></circle><circle cx="22" cy="22" r="7"></circle><circle cx="22" cy="22" r="1.8"></circle></svg></div>`;
 
   c.append(block, sponsor);
   sticky.appendChild(c);
   return block.querySelector('.typed') as HTMLElement;
 }
 
-function buildToolbox(sticky: HTMLElement): HTMLElement {
+function buildTechnical(sticky: HTMLElement, tech: PageTechnical): HTMLElement {
   const c = el('div', 'container stage-grid');
-  c.appendChild(textBlock(TOOLBOX.heading.split('\n'), TOOLBOX.lead,
-                          undefined, undefined, 'light'));
+  c.appendChild(textBlock(tech.heading, tech.lead, undefined, undefined, 'light'));
   // Leader labels are no longer static markup: they are driven by
   // scene/twins/twinLabels.ts from the active machine's 3D anchors, so they
   // track the model through explode and camera moves. This element is kept as
@@ -168,8 +187,7 @@ function buildToolbox(sticky: HTMLElement): HTMLElement {
   return labels;
 }
 
-function buildFeature(sticky: HTMLElement, index: number): { card: CodeCard } {
-  const f = FEATURES[index];
+function buildFeature(sticky: HTMLElement, f: FeatureSection): { card: CodeCard } {
   const c = el('div', 'container stage-grid');
   c.appendChild(textBlock(f.heading, f.lead, ACCENTS[f.accent], f.bullets, 'feature'));
 
@@ -337,7 +355,8 @@ function buildFooter(): HTMLElement {
 /* entry point                                                                 */
 /* -------------------------------------------------------------------------- */
 
-export function buildPage(root: HTMLElement): PageRefs {
+export function buildPage(root: HTMLElement, page = currentPage()): PageRefs {
+  document.title = page.title;
   root.appendChild(buildHeader());
 
   const track = el('div', 'stage-track');
@@ -345,12 +364,12 @@ export function buildPage(root: HTMLElement): PageRefs {
 
   const stages: StageRefs[] = [];
   let typedTarget!: HTMLElement;
-  let toolboxLabels!: HTMLElement;
-  let partLabels!: HTMLElement;
-  let bundle!: BundleCardRefs;
+  let toolboxLabels: HTMLElement = el('div', 'toolbox-labels');
+  let partLabels: HTMLElement = el('div', 'part-labels');
+  let bundle: BundleCardRefs | null = null;
   let featureIndex = 0;
 
-  for (const def of STAGES) {
+  for (const def of page.stages) {
     const stage = el('section', `stage stage--${def.kind} theme-${def.theme}`);
     stage.dataset.stage = def.id;
     stage.style.height = `${def.vh * 100}vh`;
@@ -363,13 +382,13 @@ export function buildPage(root: HTMLElement): PageRefs {
 
     switch (def.kind) {
       case 'hero':
-        typedTarget = buildHero(sticky);
+        typedTarget = buildHero(sticky, page.hero);
         break;
-      case 'toolbox':
-        toolboxLabels = buildToolbox(sticky);
+      case 'technical':
+        if (page.technical) toolboxLabels = buildTechnical(sticky, page.technical);
         break;
       case 'feature': {
-        const built = buildFeature(sticky, featureIndex++);
+        const built = buildFeature(sticky, page.features[featureIndex++]);
         card = built.card;
         break;
       }
@@ -408,5 +427,10 @@ export function buildPage(root: HTMLElement): PageRefs {
   root.appendChild(track);
   root.appendChild(buildFooter());
 
-  return { stages, track, typedTarget, toolboxLabels, partLabels, bundle };
+  // The modular stage owns the bundle card; pages without that stage still need
+  // a valid ref, so hand back a detached one rather than making callers guard.
+  return {
+    stages, track, typedTarget, toolboxLabels, partLabels,
+    bundle: bundle ?? buildBundleCard(),
+  };
 }

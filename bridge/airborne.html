@@ -4,14 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
-    <title>BRIDGE Twin | Real-Time Digital Twin Platform</title>
+    <title>BRIDGE Twin | Airborne Systems</title>
     <link rel="icon" href="/bridge-logo.svg" type="image/svg+xml" />
     <meta
       name="description"
-      content="A live physics twin of a large commercial turbofan — streaming telemetry, thermal fields, vibration spectra and fleet-wide analysis in the browser."
+      content="A live digital twin of an industrial inspection quadcopter — flight state, propulsion health, payload and gimbal telemetry."
     />
   </head>
-  <body data-page="index">
+  <body data-page="airborne">
     <!-- The persistent WebGL stage. One canvas for the whole page; sections
          change the scene state, never the renderer. -->
     <div class="stage-layer" aria-hidden="true">
@@ -21,7 +21,7 @@
 
     <div id="loading" class="loading" role="status" aria-live="polite">
       <span class="loading__bar"></span>
-      <span class="loading__text">Loading engine</span>
+      <span class="loading__text">Loading airborne twin</span>
     </div>
 
     <main id="app"></main>

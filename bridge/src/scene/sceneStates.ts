@@ -12,7 +12,8 @@
 
 import type { PartGroup } from './loadModel';
 import type { MaterialMode } from './materials';
-import { PALETTE } from '../content';
+import { ACCENTS, PALETTE } from '../content';
+import { progressAt, type PageDef } from '../pages/pages';
 
 export type ExplodeMap = Partial<Record<PartGroup, number>>;
 
@@ -52,6 +53,110 @@ export interface Keyframe extends SceneState {
   p: number;
 }
 
+/* -------------------------------------------------------------------------- */
+/* per-page timeline                                                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Build a timeline for a page from its stage *kinds*.
+ *
+ * Stage layouts differ per page, so a single hand-authored table of global
+ * progress values cannot serve them all: the same `p` lands on a different
+ * section depending on how many viewports precede it. Beats are therefore
+ * authored per stage kind and their progress is resolved against the page's own
+ * layout.
+ */
+export function buildTimeline(page: PageDef): Keyframe[] {
+  const at = (stage: string, t: number): number => progressAt(page, stage, t);
+  const out: Keyframe[] = [];
+  const accentOf = (id: string): string => {
+    const f = page.features.find((x) => x.id === id);
+    return f ? ACCENTS[f.accent] : '#ff4b4b';
+  };
+
+  for (const st of page.stages) {
+    switch (st.kind) {
+      case 'hero':
+        out.push(dark({ p: at(st.id, 0), tilt: 7, roll: 4, radius: 17.0, rot: [0, 0, -4] }));
+        out.push(dark({
+          p: at(st.id, 0.5), tilt: 50, roll: 10, camRoll: 22, radius: 20.5,
+          pos: [0.3, -0.2, 0], spin: { gear: 40, led: 12 },
+        }));
+        out.push(dark({
+          p: at(st.id, 1), tilt: 64, roll: 20, camRoll: 36, radius: 24.5,
+          pos: [0, 0.3, 0], scale: 0.95,
+          explode: { shell: 3.6, detail: 0.5 }, spin: { gear: 90, led: 22 }, lens: 0.55,
+        }));
+        break;
+
+      case 'technical':
+        // Five beats: enters assembled, turns to line-art, shell separates,
+        // full explode, partial reassemble before handing over.
+        out.push(light({ p: at(st.id, 0), tilt: 38, roll: 22, radius: 19.0, labels: 0.35 }));
+        out.push(light({ p: at(st.id, 0.27), tilt: 31, roll: -12, radius: 18.4, labels: 1 }));
+        out.push(light({
+          p: at(st.id, 0.53), tilt: 42, roll: 16, radius: 21.0, scale: 0.98,
+          explode: { shell: 0.10, battery: 0.13, avionics: 0.05, gimbal: 0.07 }, labels: 1,
+        }));
+        out.push(light({
+          p: at(st.id, 0.8), tilt: 46, roll: 34, radius: 24.5, scale: 0.94,
+          explode: {
+            shell: 0.14, battery: 0.18, avionics: 0.08, gimbal: 0.12,
+            arm: 0.16, motor: 0.13, prop: 0.20, esc: 0.09,
+            gear: 0.10, sensor: 0.10, payload: 0.10,
+          },
+          labels: 1,
+        }));
+        out.push(light({
+          p: at(st.id, 1), tilt: 40, roll: 44, radius: 21.5, scale: 0.96,
+          explode: { shell: 0.05, battery: 0.06, arm: 0.05, prop: 0.07 }, labels: 0.3,
+        }));
+        break;
+
+      case 'feature':
+        out.push(dark({
+          p: at(st.id, 0), tilt: 0, roll: 0, radius: 14.8,
+          tickColor: accentOf(st.id),
+        }));
+        break;
+
+      case 'modular':
+        out.push(light({
+          p: at(st.id, 0), tilt: 44, roll: 20, camRoll: 26, radius: 27.0, scale: 0.8,
+          explode: { gear: 0.6, detail: 0.3 },
+        }));
+        out.push(light({
+          p: at(st.id, 0.5), tilt: 40, roll: 18, camRoll: 22, radius: 31.0, scale: 0.78,
+          explode: { shell: 5.4, gear: 3.4, internal: 2.6, pod: 2.2, detail: 1.8, front: 1.6 },
+          spin: { gear: 120 }, partLabels: 1,
+        }));
+        out.push(light({
+          p: at(st.id, 1), tilt: 66, roll: 40, camRoll: -8, radius: 28.0, scale: 0.82,
+          explode: { shell: 3.2, gear: 1.4, internal: 1.0, pod: 3.0 },
+          spin: { gear: 180, pod: 40 }, partLabels: 0.25,
+        }));
+        break;
+
+      case 'sponsors':
+        out.push(dark({
+          p: at(st.id, 0), tilt: 38, roll: 30, radius: 30.0, scale: 0.8,
+          pos: [0, 2.2, 0], ledIntensity: 1.4, lens: 0, modelOpacity: 0.5,
+        }));
+        break;
+
+      case 'docs':
+        out.push(dark({
+          p: at(st.id, 0), tilt: 30, roll: 24, radius: 34.0, scale: 0.7,
+          pos: [0, 5.5, 0], ledIntensity: 0.6, lens: 0, modelOpacity: 0,
+        }));
+        break;
+    }
+  }
+
+  out.sort((a, b) => a.p - b.p);
+  return out;
+}
+
 const NONE: ExplodeMap = {};
 
 const base: Omit<SceneState, 'bg' | 'material'> = {
@@ -77,146 +182,6 @@ const light = (o: Partial<Keyframe> & { p: number }): Keyframe => ({
  * Progress landmarks. The stage track is 21 viewports tall and 20 of those are
  * scrollable, so a stage that begins at S viewports begins at p = S / 20.
  */
-export const KEYFRAMES: Keyframe[] = [
-  /* ---- hero: 3 viewports, p 0.00 -> 0.10 ------------------------------- */
-
-  // A. assembled, near-frontal, the ring filling ~32% of viewport height
-  dark({
-    p: 0.0,
-    tilt: 7, roll: 4, radius: 17.0,
-    rot: [0, 0, -4],
-    spin: { led: 0, gear: 0 },
-  }),
-
-  // B. rolls over so the barrel length reads (screenshot 2)
-  dark({
-    p: 0.05,
-    tilt: 50, roll: 10, camRoll: 22, radius: 20.5,
-    pos: [0.3, -0.2, 0],
-    spin: { gear: 40, led: 12 },
-  }),
-
-  // C. shells release and float clear (screenshots 3 + 4)
-  dark({
-    p: 0.10,
-    tilt: 64, roll: 20, camRoll: 36, radius: 24.5,
-    pos: [0, 0.3, 0], scale: 0.95,
-    explode: { shell: 3.6, detail: 0.5 },
-    spin: { gear: 90, led: 22 },
-    lens: 0.55,
-  }),
-
-  /* ---- Section 2: airborne twin, 4 viewports, p 0.15 -> 0.30 ----------- */
-  /* The drone replaces the GE9X here, so the engine is no longer repeated    */
-  /* straight after the hero. Explode values are in the drone's own metres.   */
-
-  // D. enters assembled, three-quarter from above
-  light({
-    p: 0.15,
-    tilt: 38, roll: 22, camRoll: 0, radius: 19.0,
-    scale: 1.0,
-    labels: 0.35,
-  }),
-
-  // E. rotates into the technical line-art view
-  light({
-    p: 0.19,
-    tilt: 31, roll: -12, camRoll: 0, radius: 18.4,
-    scale: 1.0,
-    labels: 1,
-  }),
-
-  // F. shell, battery and avionics separate
-  light({
-    p: 0.23,
-    tilt: 42, roll: 16, camRoll: 0, radius: 21.0,
-    scale: 0.98,
-    explode: { shell: 0.10, battery: 0.13, avionics: 0.05, gimbal: 0.07 },
-    labels: 1,
-  }),
-
-  // G. arms, motors and propellers separate - the full exploded read
-  light({
-    p: 0.27,
-    tilt: 46, roll: 34, camRoll: 0, radius: 24.5,
-    scale: 0.94,
-    explode: {
-      shell: 0.14, battery: 0.18, avionics: 0.08, gimbal: 0.12,
-      arm: 0.16, motor: 0.13, prop: 0.20, esc: 0.09,
-      gear: 0.10, sensor: 0.10, payload: 0.10,
-    },
-    labels: 1,
-  }),
-
-  // H. partially reassembles before handing over to the feature sections
-  light({
-    p: 0.30,
-    tilt: 40, roll: 44, camRoll: 0, radius: 21.5,
-    scale: 0.96,
-    explode: { shell: 0.05, battery: 0.06, arm: 0.05, prop: 0.07 },
-    labels: 0.3,
-  }),
-
-  /* ---- eight feature sections, dead-on, constant scale ------------------ */
-  /* p 0.35 .. 0.70, one every 0.05                                          */
-
-  dark({ p: 0.335, tilt: 12, roll: 6, radius: 15.4, rot: [0, 0, 6], tickColor: '#ff4b4b' }),
-  dark({ p: 0.35, tilt: 0, roll: 0, radius: 14.8, tickColor: '#ff4b4b', spin: { led: 0 } }),
-  dark({ p: 0.40, tilt: 0, roll: 0, radius: 14.8, tickColor: '#ffa828', spin: { led: 14 } }),
-  dark({ p: 0.45, tilt: 0, roll: 0, radius: 14.8, tickColor: '#00ffaa', spin: { led: 28 } }),
-  dark({ p: 0.50, tilt: 0, roll: 0, radius: 14.8, tickColor: '#4d9cff', spin: { led: 42 } }),
-  dark({ p: 0.55, tilt: 0, roll: 0, radius: 14.8, tickColor: '#26f2d5', spin: { led: 56 } }),
-  dark({ p: 0.60, tilt: 0, roll: 0, radius: 14.8, tickColor: '#b7ff54', spin: { led: 70 } }),
-  dark({ p: 0.65, tilt: 0, roll: 0, radius: 14.8, tickColor: '#ffcc2a', spin: { led: 84 } }),
-  dark({ p: 0.70, tilt: 0, roll: 0, radius: 14.8, tickColor: '#8dff55', spin: { led: 98 } }),
-
-  /* ---- modular API: 4 viewports, p 0.75 -> 0.90 ------------------------ */
-
-  // P. assembled technical drawing, high 3/4 (screenshot 15)
-  light({
-    p: 0.755,
-    tilt: 44, roll: 20, camRoll: 26, radius: 27.0,
-    scale: 0.8,
-    explode: { gear: 0.6, detail: 0.3 },
-  }),
-
-  // Q. exploded with the per-part weight labels (screenshot 16)
-  light({
-    p: 0.83,
-    tilt: 40, roll: 18, camRoll: 22, radius: 31.0,
-    scale: 0.78,
-    explode: { shell: 5.4, gear: 3.4, internal: 2.6, pod: 2.2, detail: 1.8, front: 1.6 },
-    spin: { gear: 120 },
-    partLabels: 1,
-  }),
-
-  // R. reduced set - fewer modules, tighter bundle (screenshot 17)
-  light({
-    p: 0.895,
-    tilt: 66, roll: 40, camRoll: -8, radius: 28.0,
-    scale: 0.82,
-    explode: { shell: 3.2, gear: 1.4, internal: 1.0, pod: 3.0 },
-    spin: { gear: 180, pod: 40 },
-    partLabels: 0.25,
-  }),
-
-  /* ---- sponsors + docs: the engine leaves the stage -------------------- */
-
-  dark({
-    p: 0.95,
-    tilt: 38, roll: 30, radius: 30.0,
-    rot: [0, 0, 10], scale: 0.8, pos: [0, 2.2, 0],
-    ledIntensity: 1.4, lens: 0, modelOpacity: 0.5,
-  }),
-
-  dark({
-    p: 1.0,
-    tilt: 30, roll: 24, radius: 34.0,
-    rot: [0, 0, 6], scale: 0.7, pos: [0, 5.5, 0],
-    ledIntensity: 0.6, lens: 0, modelOpacity: 0,
-  }),
-];
-
 /* -------------------------------------------------------------------------- */
 /* interpolation                                                               */
 /* -------------------------------------------------------------------------- */
@@ -266,9 +231,9 @@ const lerp3 = (
  * the background colour cross-fades around it, which is exactly how the
  * reference hands over between its dark and light sections.
  */
-export function resolveState(p: number, out?: SceneState): SceneState {
-  const kfs = KEYFRAMES;
+export function resolveState(kfs: Keyframe[], p: number, out?: SceneState): SceneState {
   const t = Math.min(1, Math.max(0, p));
+  if (!kfs.length) return out ?? dark({ p: 0 });
 
   let i = 0;
   while (i < kfs.length - 2 && kfs[i + 1].p <= t) i++;
