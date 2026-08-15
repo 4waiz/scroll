@@ -1,0 +1,4 @@
+
+# Supplied source assets and Blender backups - inputs, not build output
+/*.glb
+*.blend1

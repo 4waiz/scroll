@@ -105,7 +105,10 @@ export function buildTimeline(page: PageDef): Keyframe[] {
         out.push(light({ p: at(st.id, 0.27), tilt: c.tilt - 7, roll: c.roll - 34, radius: c.radius * 0.97, labels: 1 }));
         out.push(light({
           p: at(st.id, 0.53), tilt: c.tilt + 4, roll: c.roll - 6, radius: c.radius * 1.11, scale: 0.98,
-          explode: { shell: 0.10, battery: 0.13, avionics: 0.05, gimbal: 0.07 }, labels: 1,
+          explode: {
+            shell: 0.10, battery: 0.13, avionics: 0.05, gimbal: 0.07,
+            body: 0.05, detail: 0.08, light: 0.06,
+          }, labels: 1,
         }));
         out.push(light({
           p: at(st.id, 0.8), tilt: c.tilt + 8, roll: c.roll + 12, radius: c.radius * 1.29, scale: 0.94,
@@ -113,12 +116,17 @@ export function buildTimeline(page: PageDef): Keyframe[] {
             shell: 0.14, battery: 0.18, avionics: 0.08, gimbal: 0.12,
             arm: 0.16, motor: 0.13, prop: 0.20, esc: 0.09,
             gear: 0.10, sensor: 0.10, payload: 0.10,
+            // derived groups on the supplied car asset
+            body: 0.14, internal: 0.05, detail: 0.22, light: 0.18,
           },
           labels: 1,
         }));
         out.push(light({
           p: at(st.id, 1), tilt: c.tilt + 2, roll: c.roll + 22, radius: c.radius * 1.13, scale: 0.96,
-          explode: { shell: 0.05, battery: 0.06, arm: 0.05, prop: 0.07 }, labels: 0.3,
+          explode: {
+            shell: 0.05, battery: 0.06, arm: 0.05, prop: 0.07,
+            body: 0.04, detail: 0.07, light: 0.05,
+          }, labels: 0.3,
         }));
         break;
       }

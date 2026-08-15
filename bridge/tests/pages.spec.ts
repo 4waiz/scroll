@@ -35,7 +35,7 @@ const PAGES = [
     title: /Automotive/,
     heading: 'Vehicle',
     eyebrow: 'Automotive',
-    model: 'vehicle.glb',
+    model: 'car.glb',
     forbidden: 'bridge-engine.glb',
   },
   {

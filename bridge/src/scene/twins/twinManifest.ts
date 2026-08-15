@@ -38,6 +38,14 @@ export interface TwinDef {
    * it with -90 about X so it sits on its wheels, feet or landing gear.
    */
   baseRotation: [number, number, number];
+  /**
+   * Multiplier on the shared per-group explode amounts.
+   *
+   * Those amounts are absolute travel in the twin's own units, so one table
+   * cannot serve machines an order of magnitude apart in size: 0.14 units opens
+   * a 1.1 m drone visibly and does nothing at all to a 4.4 m car. Defaults to 1.
+   */
+  explodeScale?: number;
 }
 
 export const TWINS: Record<TwinId, TwinDef> = {
@@ -68,10 +76,10 @@ export const TWINS: Record<TwinId, TwinDef> = {
   },
   vehicle: {
     id: 'vehicle',
-    url: 'models/twins/vehicle.glb',
-    // 4.55 m long vs the engine's ~11 m: scaled up so it reads at a comparable
-    // size on screen and in the fleet composition.
-    presentationScale: 2.4,
+    url: 'models/twins/car.glb',
+    // Supplied asset, normalised to 4.4 m by the converter so it shares the
+    // family's units. Scaled up like the rest to read against the engine.
+    presentationScale: 1.8,
     accent: { primary: '#6495F5', secondary: '#FF8A42' },
     labelsRight: [
       'lidar', 'camera', 'radar', 'battery pack',
@@ -79,7 +87,13 @@ export const TWINS: Record<TwinId, TwinDef> = {
     ],
     labelsLeft: ['chassis', 'suspension', 'brake', 'steering', 'thermal loop'],
     idleClips: ['CAR_LidarSpin', 'CAR_WheelSpin'],
+    // The supplied asset ships nose-toward -Y; that yaw is baked into the
+    // converted GLB rather than added here, because a third Euler term on top
+    // of the -90 rolls the car onto its roof instead of turning it around.
     baseRotation: [-90, 0, 0],
+    // 4.4 m nose to tail, four times the drone: the shared amounts need
+    // scaling up to give the engine's wide, readable separation.
+    explodeScale: 4,
   },
   quadruped: {
     id: 'quadruped',
@@ -132,7 +146,10 @@ export const TWIN_CAM: Record<TwinId, { hero: CamPreset; technical: CamPreset }>
     technical: { tilt: 36, roll: 20, radius: 19.0 },
   },
   vehicle: {
-    // Front three-quarter, slightly above the beltline.
+    // Front three-quarter, slightly above the beltline. Negating roll to swing
+    // round to the car's other side flips the frame's up vector and puts the
+    // camera under the floor pan, so the car is turned in model space instead -
+    // see the baked yaw in blender/twins/vehicle/convert_supplied_car.py.
     hero: { tilt: 58, roll: 68, radius: 21.0 },
     technical: { tilt: 56, roll: 62, radius: 23.0 },
   },

@@ -132,7 +132,10 @@ export class TwinInstance {
     this.explode = amount;
     for (const part of this.model.parts) {
       const k = groups ? (groups[part.group] ?? 0) : 1;
-      const d = amount * k;
+      // Group amounts are absolute model-unit travel, shared across the family,
+      // so the same number reads as a wide separation on a 1.1 m drone and as
+      // almost nothing on a 4.4 m car. Each twin declares its own multiplier.
+      const d = amount * k * (this.def.explodeScale ?? 1);
       const p = part.object.position;
       if (d === 0) {
         if (!p.equals(part.restPosition)) p.copy(part.restPosition);

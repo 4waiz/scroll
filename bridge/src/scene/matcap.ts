@@ -245,5 +245,18 @@ export function groupForMaterial(name: string): keyof typeof MATCAPS | null {
   if (name.includes('Housing')) return 'housing';
   // LED / Tick / Glass / Display are handled separately and must not be
   // replaced by a graphite matcap.
-  return null;
+  if (/LED|Tick|Glass|Display/.test(name)) return null;
+
+  // Supplied assets arrive with foreign material names - Maya lamberts and
+  // blinns, V-Ray, "Chrome", "car_paint". Falling through to null left those
+  // meshes on their source PBR, so the twin rendered in its original paint
+  // instead of the family's graphite. Map what is recognisable and send the
+  // rest to the neutral body matcap.
+  const n = name.toLowerCase();
+  if (/chrome|metal|steel|alu/.test(n)) return 'fastener';
+  if (/paint|body|kuzov/.test(n)) return 'shell';
+  if (/rubber|rezin|tire|tyre|resin/.test(n)) return 'recess';
+  if (/light|lamp|faraz/.test(n)) return 'bezel';
+  if (/interior|salon|seat/.test(n)) return 'module';
+  return 'housing';
 }
