@@ -210,7 +210,7 @@ npm run build
 ```
 
 ```bash
-npx wrangler pages deploy dist --project-name <project>
+npx wrangler pages deploy dist --project-name bridgeae
 ```
 
 Requires a one-time `npx wrangler login` (or a `CLOUDFLARE_API_TOKEN` in the
@@ -222,9 +222,11 @@ Check the account and the project name before deploying:
 npx wrangler pages project list
 ```
 
-The custom domain is attached to one specific project, and wrangler offers to
-*create* a project when the name does not match rather than failing - which
-silently produces a second, domain-less deployment. `bridgeae.com` lives in the
-Bridgesoftwareteam account (`78477b5ac310a12d7dbd76555b8be974`); a deploy from
-an account that merely has access to a similarly named project will go to the
-wrong place.
+The project is **`bridgeae`** - it is the one `twin.bridgeae.com` is attached
+to, in the Bridgesoftwareteam account (`78477b5ac310a12d7dbd76555b8be974`).
+
+Get the name from the listing rather than from memory. Wrangler offers to
+*create* a project when the name does not match, instead of failing, so a typo
+silently produces a second project serving nothing: deploying to `bridge-twin`
+publishes to `bridge-twin.pages.dev` and leaves the live domain untouched. If
+wrangler asks to create a project, the name is wrong - back out.
