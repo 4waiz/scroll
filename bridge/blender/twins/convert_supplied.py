@@ -61,8 +61,10 @@ ASSETS = {
         blend="sidearm/sidearm.blend",
     ),
     "launcher": dict(
+        # 1024 left this the heaviest asset in the build at 11 MB, almost all
+        # of it texture, for a machine that is only ever seen whole.
         src="buk-m3_9k317_sam.glb", out="launcher.glb",
-        length=9.3, yaw=0, keep_rig=False, max_tex=1024, target_tris=150_000,
+        length=9.3, yaw=0, keep_rig=False, max_tex=512, target_tris=150_000,
         blend="launcher/launcher.blend",
     ),
 }

@@ -2,3 +2,6 @@
 # Supplied source assets and Blender backups - inputs, not build output
 /*.glb
 *.blend1
+
+# wrangler local cache - account ids and build state, not source
+.wrangler/

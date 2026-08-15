@@ -201,12 +201,30 @@ turns away from camera, since a flat DOM plane cannot foreshorten.
 
 ## Deployment
 
-Static build, deployed to Cloudflare Pages:
+Static build, deployed to Cloudflare Pages. Both commands run from `bridge/`,
+not the repository root - `dist/` is written here, and running them one level up
+fails with `ENOENT: no such file or directory, scandir ...\scroll\dist`:
 
 ```bash
 npm run build
-npx wrangler pages deploy dist --project-name bridge-twin
+```
+
+```bash
+npx wrangler pages deploy dist --project-name <project>
 ```
 
 Requires a one-time `npx wrangler login` (or a `CLOUDFLARE_API_TOKEN` in the
 environment) before the first deploy.
+
+Check the account and the project name before deploying:
+
+```bash
+npx wrangler pages project list
+```
+
+The custom domain is attached to one specific project, and wrangler offers to
+*create* a project when the name does not match rather than failing - which
+silently produces a second, domain-less deployment. `bridgeae.com` lives in the
+Bridgesoftwareteam account (`78477b5ac310a12d7dbd76555b8be974`); a deploy from
+an account that merely has access to a similarly named project will go to the
+wrong place.
