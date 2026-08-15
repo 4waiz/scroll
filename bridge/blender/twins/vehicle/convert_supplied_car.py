@@ -24,7 +24,7 @@ from mathutils import Matrix, Vector
 
 SRC = r"C:\Users\awaiz\OneDrive\Desktop\scroll\bridge\alfa_romeo_stradale_1967.glb"
 OUT = r"C:\Users\awaiz\OneDrive\Desktop\scroll\bridge\public\models\twins\car.glb"
-BLEND = r"C:\Users\awaiz\OneDrive\Desktop\scroll\bridge\blender\twins\vehicle\car.blend"
+BLEND = r"C:\Users\awaiz\OneDrive\Desktop\scroll\bridge\blender\_work\vehicle\car.blend"
 
 # Materials that carry manufacturer marks. Removing these strips the badges and
 # the number plate from the asset before it is published.

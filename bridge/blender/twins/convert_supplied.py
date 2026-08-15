@@ -36,7 +36,11 @@ from mathutils import Matrix, Vector
 ROOT = r"C:\Users\awaiz\OneDrive\Desktop\scroll\bridge"
 SRC_DIR = ROOT
 OUT_DIR = os.path.join(ROOT, "public", "models", "twins")
-BLEND_DIR = os.path.join(ROOT, "blender", "twins")
+# Converted .blend files land here rather than beside the build scripts. Each
+# is 200-350 MB, far past GitHub's 100 MB per-file hard limit, and every one
+# regenerates from its source GLB in a single run - so the directory is ignored
+# rather than committed.
+BLEND_DIR = os.path.join(ROOT, "blender", "_work")
 
 # Materials that carry manufacturer marks. Removing these strips badges,
 # number plates and painted-on branding before the asset is published.

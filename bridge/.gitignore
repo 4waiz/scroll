@@ -5,3 +5,8 @@
 
 # wrangler local cache - account ids and build state, not source
 .wrangler/
+
+# Converter working files. Each supplied asset produces a 200-350 MB .blend,
+# past GitHub's 100 MB per-file hard limit, and every one regenerates by
+# re-running blender/twins/convert_supplied.py.
+blender/_work/
