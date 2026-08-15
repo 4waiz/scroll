@@ -1125,11 +1125,17 @@ svg { display: block; }
   .scrubber { height: 34px; }
 }
 
-/* The six-item nav cannot fit a phone width. Keep the two primary
-   destinations in the header; the footer still lists every link. */
-@media (max-width: 700px) {
-  .site-nav ul { gap: 18px; }
-  .site-nav li:not(:first-child):not(:nth-child(5)) { display: none; }
+/* Eight nav items - six machines plus Docs and GitHub - stop fitting well
+   before phone width: they overflow a 768px tablet by 30px. Tighten the gap
+   first, then fall back to the current machine plus the two utility links.
+   The footer always lists the whole family. */
+@media (max-width: 1180px) {
+  .site-nav ul { gap: 20px; }
+}
+
+@media (max-width: 900px) {
+  .site-nav ul { gap: 16px; }
+  .site-nav li:not(:first-child):not(:nth-last-child(-n + 2)) { display: none; }
 }
 
 /* Landscape phones: the sticky stages would be unusably short. */

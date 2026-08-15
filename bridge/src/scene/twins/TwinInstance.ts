@@ -30,6 +30,9 @@ export class TwinInstance {
 
   private mixer: AnimationMixer | null = null;
   private actions: AnimationAction[] = [];
+  /** the twin's baked teardown, held paused and scrubbed by scroll */
+  private scrubAction: AnimationAction | null = null;
+  private scrubT = -1;
   private explode = -1;
   private spin = 0;
   private active = false;
@@ -58,6 +61,17 @@ export class TwinInstance {
     if (model.clips.length) {
       this.mixer = new AnimationMixer(model.root);
       for (const clip of model.clips) {
+        if (def.explodeClip && clip.name === def.explodeClip) {
+          // Held at time 0 and driven by setExplodeT. It has to be playing for
+          // the mixer to evaluate it at all, but paused so it never advances
+          // on its own - scroll is the only thing that moves it.
+          const action = this.mixer.clipAction(clip);
+          action.play();
+          action.paused = true;
+          action.clampWhenFinished = true;
+          this.scrubAction = action;
+          continue;
+        }
         const wanted = def.idleClips.some((p) => clip.name.startsWith(p));
         if (!wanted) continue;
         const action = this.mixer.clipAction(clip);
@@ -144,6 +158,21 @@ export class TwinInstance {
       _offset.copy(part.explode).multiplyScalar(d);
       p.copy(part.restPosition).add(_offset);
     }
+  }
+
+  /**
+   * Scrub the baked teardown to `t` (0..1). No-op for twins without one, which
+   * use the per-part explode vectors instead.
+   */
+  setExplodeT(t: number): void {
+    if (!this.scrubAction || !this.mixer) return;
+    const clamped = t < 0 ? 0 : t > 1 ? 1 : t;
+    if (Math.abs(clamped - this.scrubT) < 1e-4) return;
+    this.scrubT = clamped;
+    this.scrubAction.time = clamped * this.scrubAction.getClip().duration;
+    // The mixer only writes the pose on update, and a paused action is skipped
+    // by the idle tick, so nudge it here.
+    this.mixer.update(0);
   }
 
   /** Continuous spin of the whole machine about its own up axis, in degrees. */

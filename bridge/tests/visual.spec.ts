@@ -78,7 +78,7 @@ test.describe('scene states', () => {
         if (m.type() === 'error') errors.push(m.text());
       });
 
-      await page.goto(`/?state=${state}`, { waitUntil: 'load' });
+      await page.goto(`/aerospace.html?state=${state}`, { waitUntil: 'load' });
       await settle(page);
       await freezeAnimations(page);
       await page.screenshot({ path: `${SHOT_DIR}/${state}.png` });
@@ -92,7 +92,7 @@ test.describe('layout invariants', () => {
   test('no horizontal overflow at any breakpoint', async ({ page }) => {
     for (const bp of BREAKPOINTS) {
       await page.setViewportSize({ width: bp.width, height: bp.height });
-      await page.goto('/?state=telemetry', { waitUntil: 'load' });
+      await page.goto('/aerospace.html?state=telemetry', { waitUntil: 'load' });
       await settle(page, 12);
 
       const overflow = await page.evaluate(
@@ -106,7 +106,7 @@ test.describe('layout invariants', () => {
 
   test('lens overlay is centred on the projected display', async ({ page }) => {
     await page.setViewportSize(REFERENCE);
-    await page.goto('/?state=sensors', { waitUntil: 'load' });
+    await page.goto('/aerospace.html?state=sensors', { waitUntil: 'load' });
     await settle(page);
 
     const box = await page.evaluate(() => {
@@ -138,7 +138,7 @@ test.describe('layout invariants', () => {
 
   test('scrubber sits at the measured corner offset', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/?state=thermal', { waitUntil: 'load' });
+    await page.goto('/aerospace.html?state=thermal', { waitUntil: 'load' });
     await settle(page, 12);
 
     const box = await page.evaluate(() => {
@@ -162,7 +162,7 @@ test.describe('layout invariants', () => {
   test('reduced motion still renders full content', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize(REFERENCE);
-    await page.goto('/', { waitUntil: 'load' });
+    await page.goto('/aerospace.html', { waitUntil: 'load' });
     await settle(page, 12);
 
     const headings = await page.locator('h2').allTextContents();

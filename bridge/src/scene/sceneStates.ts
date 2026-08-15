@@ -36,6 +36,15 @@ export interface SceneState {
   material: MaterialMode;
   /** per-group exploded travel, in model units */
   explode: ExplodeMap;
+  /**
+   * Progress through a twin's baked teardown clip, 0..1.
+   *
+   * Assets that ship an authored exploded view are driven by this instead of
+   * `explode`: the author knew which way each part should travel, which a
+   * derived radial vector can only approximate. Twins without such a clip
+   * ignore it.
+   */
+  explodeT: number;
   /** per-group extra spin about the barrel axis, degrees */
   spin: ExplodeMap;
   ledIntensity: number;
@@ -70,6 +79,7 @@ export interface Keyframe extends SceneState {
 export function buildTimeline(page: PageDef): Keyframe[] {
   const at = (stage: string, t: number): number => progressAt(page, stage, t);
   const out: Keyframe[] = [];
+  let featureIndex = 0;
   const accentOf = (id: string): string => {
     const f = page.features.find((x) => x.id === id);
     return f ? ACCENTS[f.accent] : '#ff4b4b';
@@ -108,7 +118,7 @@ export function buildTimeline(page: PageDef): Keyframe[] {
           explode: {
             shell: 0.10, battery: 0.13, avionics: 0.05, gimbal: 0.07,
             body: 0.05, detail: 0.08, light: 0.06,
-          }, labels: 1,
+          }, explodeT: 0.45, labels: 1,
         }));
         out.push(light({
           p: at(st.id, 0.8), tilt: c.tilt + 8, roll: c.roll + 12, radius: c.radius * 1.29, scale: 0.94,
@@ -119,24 +129,45 @@ export function buildTimeline(page: PageDef): Keyframe[] {
             // derived groups on the supplied car asset
             body: 0.14, internal: 0.05, detail: 0.22, light: 0.18,
           },
-          labels: 1,
+          explodeT: 1, labels: 1,
         }));
         out.push(light({
           p: at(st.id, 1), tilt: c.tilt + 2, roll: c.roll + 22, radius: c.radius * 1.13, scale: 0.96,
           explode: {
             shell: 0.05, battery: 0.06, arm: 0.05, prop: 0.07,
             body: 0.04, detail: 0.07, light: 0.05,
-          }, labels: 0.3,
+          }, explodeT: 0.35, labels: 0.3,
         }));
         break;
       }
 
-      case 'feature':
+      case 'feature': {
+        // Every feature section is its own camera beat, so scrolling the copy
+        // column turns the machine instead of leaving it parked. A single
+        // shared keyframe per feature - which is what this used to emit - made
+        // each stage identical apart from the accent, so nothing moved.
+        //
+        // The turbofan keeps its axial view, which is the shot the whole page
+        // is built around, and rotates about the barrel. Every other machine
+        // orbits its own hero framing, because a near-zero tilt that reads as
+        // "down the barrel" on an engine reads as a flat front elevation on a
+        // car, a robot or a launcher.
+        const h = TWIN_CAM[st.twin].hero;
+        const n = Math.max(1, page.features.length);
+        const t = n > 1 ? featureIndex / (n - 1) : 0;
+        featureIndex += 1;
+        const axial = st.twin === 'ge9x';
         out.push(dark({
-          p: at(st.id, 0), tilt: 0, roll: 0, radius: 14.8,
+          p: at(st.id, 0),
+          tilt: axial ? 3 + t * 9 : h.tilt - 15 + t * 28,
+          roll: axial ? t * 42 : h.roll - 32 + t * 70,
+          camRoll: axial ? -6 + t * 20 : (h.camRoll ?? 0) - 8 + t * 22,
+          radius: axial ? 14.8 + t * 2.2 : h.radius * (0.9 + t * 0.18),
           tickColor: accentOf(st.id),
+          spin: { gear: t * 130, led: t * 34 },
         }));
         break;
+      }
 
       case 'modular':
         out.push(light({
@@ -180,7 +211,7 @@ const NONE: ExplodeMap = {};
 const base: Omit<SceneState, 'bg' | 'material'> = {
   tilt: 0, roll: 0, camRoll: 0, radius: 14.8, fov: 32, target: [0, 0, 0],
   rot: [0, 0, 0], pos: [0, 0, 0], scale: 1,
-  explode: NONE, spin: NONE,
+  explode: NONE, spin: NONE, explodeT: 0,
   ledIntensity: 1.0, tickColor: '#ff4b4b',
   lens: 1, labels: 0, partLabels: 0, modelOpacity: 1,
 };
@@ -274,6 +305,7 @@ export function resolveState(kfs: Keyframe[], p: number, out?: SceneState): Scen
   s.scale = lerp(a.scale, b.scale, k);
   s.material = k < 0.5 ? a.material : b.material;
   s.explode = lerpMap(a.explode, b.explode, k);
+  s.explodeT = lerp(a.explodeT, b.explodeT, k);
   s.spin = lerpMap(a.spin, b.spin, k);
   s.ledIntensity = lerp(a.ledIntensity, b.ledIntensity, k);
   s.tickColor = lerpHex(a.tickColor, b.tickColor, k);

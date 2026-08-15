@@ -144,14 +144,34 @@ export function paintMatcap(spec: MatcapSpec, size: number): ImageData {
       col = mix(col, hiSoft, Math.min(1, edge * 0.75));
       col = mix(col, hi, edge * edge);
 
-      data[i] = Math.round(col[0]);
-      data[i + 1] = Math.round(col[1]);
-      data[i + 2] = Math.round(col[2]);
+      // --- surface grain ------------------------------------------------
+      // Flat tonal ramps read as plastic. Because a matcap is indexed by the
+      // view-space normal, noise added here follows the curvature of whatever
+      // it lands on, so it behaves like a machined finish rather than a decal
+      // pasted over the model. Two scales: a fine speckle for tooth, and a
+      // slow radial band that hints at brushed metal.
+      //
+      // Deterministic on purpose - the visual suite diffs screenshots, so a
+      // random grain would fail every run.
+      const grain = hash2(x, y) - 0.5;
+      const brushed = Math.sin(radius * 46 + nx * 6) * 0.5;
+      const tone = (grain * 4.2 + brushed * 1.5) * (0.35 + 0.65 * tBase);
+      data[i] = clamp255(col[0] + tone);
+      data[i + 1] = clamp255(col[1] + tone);
+      data[i + 2] = clamp255(col[2] + tone);
       data[i + 3] = 255;
     }
   }
   return img;
 }
+
+/** Deterministic 0..1 hash. Stable across reloads so screenshot diffs hold. */
+function hash2(x: number, y: number): number {
+  const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+  return s - Math.floor(s);
+}
+
+const clamp255 = (v: number): number => (v < 0 ? 0 : v > 255 ? 255 : Math.round(v));
 
 export function createMatcap(spec: MatcapSpec, size = 512): CanvasTexture {
   const canvas = document.createElement('canvas');

@@ -15,10 +15,19 @@ const PAGES = [
     slug: 'index',
     path: '/index.html',
     title: /Real-Time Digital Twin Platform/,
+    heading: 'Every joint',
+    eyebrow: 'Field robotics',
+    model: 'quadruped-field.glb',
+    forbidden: 'bridge-engine.glb',
+  },
+  {
+    slug: 'aerospace',
+    path: '/aerospace.html',
+    title: /Aerospace/,
     heading: 'Digital twin',
     eyebrow: 'Aerospace',
     model: 'bridge-engine.glb',
-    forbidden: 'drone.glb',
+    forbidden: 'quadruped-field.glb',
   },
   {
     slug: 'airborne',
@@ -26,7 +35,7 @@ const PAGES = [
     title: /Airborne Systems/,
     heading: 'Every airborne',
     eyebrow: 'Airborne',
-    model: 'drone.glb',
+    model: 'drone-uav.glb',
     forbidden: 'bridge-engine.glb',
   },
   {
@@ -39,12 +48,21 @@ const PAGES = [
     forbidden: 'bridge-engine.glb',
   },
   {
-    slug: 'field',
-    path: '/field.html',
-    title: /Field Robotics/,
-    heading: 'Every joint',
-    eyebrow: 'Field robotics',
-    model: 'quadruped.glb',
+    slug: 'defence',
+    path: '/defence.html',
+    title: /Defence Systems/,
+    heading: 'Every round',
+    eyebrow: 'Defence',
+    model: 'sidearm.glb',
+    forbidden: 'bridge-engine.glb',
+  },
+  {
+    slug: 'airdefence',
+    path: '/airdefence.html',
+    title: /Air Defence/,
+    heading: 'Radar to rail',
+    eyebrow: 'Air defence',
+    model: 'launcher.glb',
     forbidden: 'bridge-engine.glb',
   },
 ];
@@ -101,17 +119,31 @@ test('header links every machine page', async ({ page }) => {
   const hrefs = await page.locator('.site-nav a').evaluateAll(
     (els) => els.map((e) => (e as HTMLAnchorElement).getAttribute('href')),
   );
-  expect(hrefs).toContain('index.html');
-  expect(hrefs).toContain('airborne.html');
-  expect(hrefs).toContain('automotive.html');
-  expect(hrefs).toContain('field.html');
+  for (const href of [
+    'index.html', 'aerospace.html', 'airborne.html',
+    'automotive.html', 'defence.html', 'airdefence.html',
+  ]) expect(hrefs, `header links ${href}`).toContain(href);
 
   // The current page is marked.
-  await expect(page.locator('.site-nav a.is-current')).toHaveText('Aerospace');
+  await expect(page.locator('.site-nav a.is-current')).toHaveText('Field robotics');
 
   // And the link actually navigates.
   await page.locator('.site-nav a[href="airborne.html"]').click();
   await page.waitForURL('**/airborne.html');
   await settle(page);
   await expect(page.locator('h2').first()).toContainText('Every airborne');
+});
+
+test('footer lists every machine', async ({ page }) => {
+  await page.setViewportSize(REFERENCE);
+  await page.goto('/index.html', { waitUntil: 'load' });
+  await settle(page, 8);
+
+  const hrefs = await page.locator('.site-footer .footer-col a').evaluateAll(
+    (els) => els.map((e) => (e as HTMLAnchorElement).getAttribute('href')),
+  );
+  for (const href of [
+    'index.html', 'aerospace.html', 'airborne.html',
+    'automotive.html', 'defence.html', 'airdefence.html',
+  ]) expect(hrefs, `footer links ${href}`).toContain(href);
 });

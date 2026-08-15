@@ -303,11 +303,33 @@ function buildDocs(sticky: HTMLElement): void {
 /* footer                                                                      */
 /* -------------------------------------------------------------------------- */
 
-function buildFooter(): HTMLElement {
+function buildFooter(current = currentPage()): HTMLElement {
   const footer = el('footer', 'site-footer');
   const c = el('div', 'container');
 
   const cols = el('div', 'footer-cols');
+
+  // Every machine is reachable from the footer as well as the header. The
+  // header condenses on narrow viewports, so this is the only place the whole
+  // family is always listed.
+  const machines = el('div', 'footer-col');
+  machines.appendChild(el('h4', undefined, 'Machines'));
+  const machineList = el('ul');
+  for (const page of NAV_PAGES) {
+    const li = el('li');
+    const a = el('a');
+    a.href = page.href;
+    if (page.slug === current.slug) a.setAttribute('aria-current', 'page');
+    a.innerHTML =
+      `<span>${page.navLabel}</span>` +
+      `<svg class="ext" viewBox="0 0 14 10" aria-hidden="true">` +
+      `<path d="M0 5h12M8.5 1.5L12 5l-3.5 3.5"></path></svg>`;
+    li.appendChild(a);
+    machineList.appendChild(li);
+  }
+  machines.appendChild(machineList);
+  cols.appendChild(machines);
+
   for (const col of FOOTER.columns) {
     const section = el('div', 'footer-col');
     section.appendChild(el('h4', undefined, col.title));
@@ -425,7 +447,7 @@ export function buildPage(root: HTMLElement, page = currentPage()): PageRefs {
   }
 
   root.appendChild(track);
-  root.appendChild(buildFooter());
+  root.appendChild(buildFooter(page));
 
   // The modular stage owns the bundle card; pages without that stage still need
   // a valid ref, so hand back a detached one rather than making callers guard.

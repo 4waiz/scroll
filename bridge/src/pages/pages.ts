@@ -13,7 +13,8 @@
 import type { TwinId } from '../scene/twins/twinManifest';
 import { FEATURES, type FeatureSection } from '../content';
 
-export type PageSlug = 'index' | 'airborne' | 'automotive' | 'field' | 'humanoid' | 'fleet';
+export type PageSlug =
+  | 'index' | 'aerospace' | 'airborne' | 'automotive' | 'defence' | 'airdefence';
 
 export interface PageStage {
   id: string;
@@ -54,15 +55,111 @@ export interface PageDef {
   stages: PageStage[];
 }
 
+/**
+ * Standard stage layout for a machine page.
+ *
+ * Every machine gets the same rhythm - hero, teardown, one pinned beat per
+ * feature, docs - so the scroll choreography is identical across the family and
+ * only the twin and the copy change.
+ */
+function machineStages(
+  twin: TwinId, features: FeatureSection[], teardownId = 'teardown',
+  extra: PageStage[] = [],
+): PageStage[] {
+  return [
+    { id: 'hero', kind: 'hero', vh: 3, theme: 'dark', twin },
+    { id: teardownId, kind: 'technical', vh: 4, theme: 'light', twin },
+    ...features.map((f): PageStage => ({
+      id: f.id, kind: 'feature', vh: 1, theme: 'dark', twin,
+    })),
+    ...extra,
+    { id: 'docs', kind: 'docs', vh: 1, theme: 'dark', twin },
+  ];
+}
+
 /* -------------------------------------------------------------------------- */
-/* home - the GE9X                                                             */
+/* home - the field robot                                                      */
 /* -------------------------------------------------------------------------- */
+
+const FIELD_FEATURES: FeatureSection[] = [
+  {
+    id: 'gait',
+    heading: 'Gait and contact',
+    lead: 'Foot placement, contact force and slip resolved per leg, so a lost foothold is visible the moment it happens.',
+    bullets: ['Per-foot contact force', 'Slip and stumble detection', 'Gait phase tracking'],
+    accent: 'lime',
+    demo: 'clockDemo',
+    code: `const robot = bridge.twin('field-04');
+
+robot.stream([
+  'foot.*.force',
+  'gait.phase',
+  'imu.orientation'
+]);`,
+  },
+  {
+    id: 'actuators',
+    heading: 'Actuator health',
+    lead: 'Torque, temperature and backlash across all twelve joints, compared leg to leg and against the fleet baseline.',
+    bullets: ['Per-joint torque', 'Thermal derating', 'Backlash trend'],
+    accent: 'yellow',
+    demo: 'staggeringDemo',
+    code: `robot.compare('joint.*', {
+  metric: 'torque.rms',
+  baseline: 'fleet',
+  alertOn: 'deviation > 2σ'
+});`,
+  },
+  {
+    id: 'terrain',
+    heading: 'Terrain response',
+    lead: 'Body attitude against ground profile, so you can see how the machine reacts to what it walked onto.',
+    bullets: ['Ground profile estimate', 'Body attitude response', 'Route replay'],
+    accent: 'green',
+    demo: 'scrollObserverDemo',
+    code: `robot.observe('terrain', {
+  window: 'route-12',
+  align: 'body.attitude'
+});`,
+  },
+];
 
 const HOME: PageDef = {
   slug: 'index',
   href: 'index.html',
-  navLabel: 'Aerospace',
+  navLabel: 'Field robotics',
   title: 'BRIDGE Twin | Real-Time Digital Twin Platform',
+  description:
+    'One live operational model per machine. Gait and contact forces, actuator health and terrain response on a walking inspection robot.',
+  twin: 'quadruped',
+  live: true,
+  hero: {
+    eyebrow: 'Field robotics',
+    heading: ['Every joint.', 'Every foothold.', 'Accounted for.'],
+    lead: 'BRIDGE pairs each machine with a live operational model. Track actuator health, contact forces and terrain response across',
+    typed: ['all twelve joints', 'every foothold', 'the whole route', 'the entire fleet'],
+    install: 'npm i @bridge/twin',
+    cta: 'Read the docs',
+  },
+  technical: {
+    heading: ['Every joint.', 'Every foothold.', 'Accounted for.'],
+    lead: 'Track actuator health, contact forces and terrain response across the complete machine.',
+  },
+  features: FIELD_FEATURES,
+  stages: machineStages('quadruped', FIELD_FEATURES, 'teardown', [
+    { id: 'sponsors', kind: 'sponsors', vh: 1, theme: 'dark', twin: 'quadruped' },
+  ]),
+};
+
+/* -------------------------------------------------------------------------- */
+/* aerospace - the GE9X                                                        */
+/* -------------------------------------------------------------------------- */
+
+const AEROSPACE: PageDef = {
+  slug: 'aerospace',
+  href: 'aerospace.html',
+  navLabel: 'Aerospace',
+  title: 'BRIDGE Twin | Aerospace',
   description:
     'A live physics twin of a large commercial turbofan - telemetry, thermal fields, vibration spectra and fleet-wide analysis in the browser.',
   twin: 'ge9x',
@@ -89,7 +186,7 @@ const HOME: PageDef = {
 };
 
 /* -------------------------------------------------------------------------- */
-/* airborne - the inspection drone                                             */
+/* airborne - the inspection UAV                                               */
 /* -------------------------------------------------------------------------- */
 
 const DRONE_FEATURES: FeatureSection[] = [
@@ -142,7 +239,7 @@ const AIRBORNE: PageDef = {
   navLabel: 'Airborne',
   title: 'BRIDGE Twin | Airborne Systems',
   description:
-    'A live digital twin of an industrial inspection quadcopter - flight state, propulsion health, payload and gimbal telemetry.',
+    'A live digital twin of an industrial inspection UAV - flight state, propulsion health, payload and gimbal telemetry.',
   twin: 'drone',
   live: true,
   hero: {
@@ -158,22 +255,11 @@ const AIRBORNE: PageDef = {
     lead: 'From the flight computer to each motor and sensor, every component carries live state, calibration and service history.',
   },
   features: DRONE_FEATURES,
-  stages: [
-    { id: 'hero', kind: 'hero', vh: 3, theme: 'dark', twin: 'drone' },
-    { id: 'teardown', kind: 'technical', vh: 4, theme: 'light', twin: 'drone' },
-    ...DRONE_FEATURES.map((f): PageStage => ({
-      id: f.id, kind: 'feature', vh: 1, theme: 'dark', twin: 'drone',
-    })),
-    { id: 'docs', kind: 'docs', vh: 1, theme: 'dark', twin: 'drone' },
-  ],
+  stages: machineStages('drone', DRONE_FEATURES),
 };
 
 /* -------------------------------------------------------------------------- */
-/* registry                                                                    */
-/* -------------------------------------------------------------------------- */
-
-/* -------------------------------------------------------------------------- */
-/* automotive - the autonomous crossover                                       */
+/* automotive - the supplied road car                                          */
 /* -------------------------------------------------------------------------- */
 
 const VEHICLE_FEATURES: FeatureSection[] = [
@@ -228,7 +314,7 @@ const AUTOMOTIVE: PageDef = {
   navLabel: 'Automotive',
   title: 'BRIDGE Twin | Automotive',
   description:
-    'A live digital twin of an autonomous electric crossover — sensor fusion, battery and thermal state, chassis and wheel telemetry.',
+    'A live digital twin of a road car — sensor fusion, battery and thermal state, chassis and wheel telemetry.',
   twin: 'vehicle',
   live: true,
   hero: {
@@ -244,100 +330,165 @@ const AUTOMOTIVE: PageDef = {
     lead: 'From the drive units to each wheel and sensor, every component carries live state, calibration and service history.',
   },
   features: VEHICLE_FEATURES,
-  stages: [
-    { id: 'hero', kind: 'hero', vh: 3, theme: 'dark', twin: 'vehicle' },
-    { id: 'cutaway', kind: 'technical', vh: 4, theme: 'light', twin: 'vehicle' },
-    ...VEHICLE_FEATURES.map((f): PageStage => ({
-      id: f.id, kind: 'feature', vh: 1, theme: 'dark', twin: 'vehicle',
-    })),
-    { id: 'docs', kind: 'docs', vh: 1, theme: 'dark', twin: 'vehicle' },
-  ],
+  stages: machineStages('vehicle', VEHICLE_FEATURES, 'cutaway'),
 };
 
 /* -------------------------------------------------------------------------- */
-/* field robotics - the inspection quadruped                                   */
+/* defence - the service weapon                                                */
 /* -------------------------------------------------------------------------- */
 
-const FIELD_FEATURES: FeatureSection[] = [
+const SIDEARM_FEATURES: FeatureSection[] = [
   {
-    id: 'gait',
-    heading: 'Gait and contact',
-    lead: 'Foot placement, contact force and slip resolved per leg, so a lost foothold is visible the moment it happens.',
-    bullets: ['Per-foot contact force', 'Slip and stumble detection', 'Gait phase tracking'],
-    accent: 'lime',
+    id: 'wear',
+    heading: 'Round count and wear',
+    lead: 'Rounds through the barrel, throat erosion and bolt wear tracked per serial rather than estimated from an issue date.',
+    bullets: ['Rounds since overhaul', 'Barrel erosion estimate', 'Component wear limits'],
+    accent: 'yellow',
     demo: 'clockDemo',
-    code: `const robot = bridge.twin('field-04');
+    code: `const unit = bridge.twin('sn-44192');
 
-robot.stream([
-  'foot.*.force',
-  'gait.phase',
-  'imu.orientation'
+unit.stream([
+  'rounds.count',
+  'barrel.erosion',
+  'bolt.cycles'
 ]);`,
   },
   {
-    id: 'actuators',
-    heading: 'Actuator health',
-    lead: 'Torque, temperature and backlash across all twelve joints, compared leg to leg and against the fleet baseline.',
-    bullets: ['Per-joint torque', 'Thermal derating', 'Backlash trend'],
-    accent: 'yellow',
-    demo: 'staggeringDemo',
-    code: `robot.compare('joint.*', {
-  metric: 'torque.rms',
-  baseline: 'fleet',
-  alertOn: 'deviation > 2σ'
+    id: 'zero',
+    heading: 'Optic and zero',
+    lead: 'Sight zero, mount torque and confirmed-zero history, so a drifted optic is caught on the bench and not on the range.',
+    bullets: ['Zero retention history', 'Mount torque log', 'Optic battery state'],
+    accent: 'corail',
+    demo: 'transformsDemo',
+    code: `unit.observe('optic', {
+  metric: 'zero.offset',
+  since: 'last-confirmed',
+  alertOn: 'drift > 1.5 MOA'
 });`,
   },
   {
-    id: 'terrain',
-    heading: 'Terrain response',
-    lead: 'Body attitude against ground profile, so you can see how the machine reacts to what it walked onto.',
-    bullets: ['Ground profile estimate', 'Body attitude response', 'Route replay'],
-    accent: 'green',
-    demo: 'scrollObserverDemo',
-    code: `robot.observe('terrain', {
-  window: 'route-12',
-  align: 'body.attitude'
+    id: 'armoury',
+    heading: 'Armoury and custody',
+    lead: 'Issue, return and inspection events against each serial, giving one continuous chain of custody across the rack.',
+    bullets: ['Issue and return log', 'Inspection due dates', 'Rack-level readiness'],
+    accent: 'orange',
+    demo: 'staggeringDemo',
+    code: `bridge.fleet('armoury-3').report({
+  group: 'serial',
+  include: ['custody', 'inspection'],
+  overdue: true
 });`,
   },
 ];
 
-const FIELD: PageDef = {
-  slug: 'field',
-  href: 'field.html',
-  navLabel: 'Field robotics',
-  title: 'BRIDGE Twin | Field Robotics',
+const DEFENCE: PageDef = {
+  slug: 'defence',
+  href: 'defence.html',
+  navLabel: 'Defence',
+  title: 'BRIDGE Twin | Defence Systems',
   description:
-    'A live digital twin of an industrial inspection quadruped — gait and contact forces, actuator health, terrain response.',
-  twin: 'quadruped',
+    'A live digital twin of a service weapon — round count and wear, optic zero retention, armoury custody and inspection state.',
+  twin: 'sidearm',
   live: true,
   hero: {
-    eyebrow: 'Field robotics',
-    heading: ['Every joint.', 'Every foothold.', 'Accounted for.'],
-    lead: 'Track actuator health, contact forces and terrain response across',
-    typed: ['all twelve joints', 'every foothold', 'the whole route', 'the entire fleet'],
+    eyebrow: 'Defence',
+    heading: ['Every round.', 'Every service.', 'On the record.'],
+    lead: 'Wear, zero and chain of custody held per serial across',
+    typed: ['every unit', 'the whole rack', 'each inspection', 'the entire armoury'],
     install: 'npm i @bridge/twin',
     cta: 'Read the docs',
   },
   technical: {
-    heading: ['Every joint.', 'Every foothold.', 'Accounted for.'],
-    lead: 'Track actuator health, contact forces and terrain response across the complete machine.',
+    heading: ['Every component,', 'tracked to', 'its serial'],
+    lead: 'From the receiver to the optic mount, each assembly carries its own wear state, inspection history and service limits.',
   },
-  features: FIELD_FEATURES,
-  stages: [
-    { id: 'hero', kind: 'hero', vh: 3, theme: 'dark', twin: 'quadruped' },
-    { id: 'teardown', kind: 'technical', vh: 4, theme: 'light', twin: 'quadruped' },
-    ...FIELD_FEATURES.map((f): PageStage => ({
-      id: f.id, kind: 'feature', vh: 1, theme: 'dark', twin: 'quadruped',
-    })),
-    { id: 'docs', kind: 'docs', vh: 1, theme: 'dark', twin: 'quadruped' },
-  ],
+  features: SIDEARM_FEATURES,
+  stages: machineStages('sidearm', SIDEARM_FEATURES, 'stripdown'),
 };
+
+/* -------------------------------------------------------------------------- */
+/* air defence - the mobile launcher                                           */
+/* -------------------------------------------------------------------------- */
+
+const LAUNCHER_FEATURES: FeatureSection[] = [
+  {
+    id: 'radar',
+    heading: 'Radar and track',
+    lead: 'Search and track channels resolved onto one picture, so the operator sees a single track file instead of two consoles.',
+    bullets: ['Search and track fusion', 'Clutter and jam state', 'Track quality scoring'],
+    accent: 'sky',
+    demo: 'staggeringDemo',
+    code: `const telar = bridge.twin('telar-09');
+
+telar.stream([
+  'radar.search.*',
+  'radar.track.*',
+  'track.quality'
+]);`,
+  },
+  {
+    id: 'readiness',
+    heading: 'Launcher readiness',
+    lead: 'Canister state, elevation drive and interlock status per rail, reported continuously rather than at readiness checks.',
+    bullets: ['Per-rail canister state', 'Elevation drive health', 'Interlock and safety chain'],
+    accent: 'turquoise',
+    demo: 'clockDemo',
+    code: `telar.observe('rail.*', {
+  include: ['canister', 'interlock'],
+  alertOn: 'state != ready'
+});`,
+  },
+  {
+    id: 'mobility',
+    heading: 'Chassis and power',
+    lead: 'Drivetrain, generator and levelling state, so a vehicle fault is visible before it becomes an availability problem.',
+    bullets: ['Generator load and fuel', 'Levelling jack state', 'Drivetrain temperatures'],
+    accent: 'lime',
+    demo: 'scrollObserverDemo',
+    code: `telar.observe('chassis', {
+  metric: 'generator.load',
+  window: '30m',
+  compare: 'battery'
+});`,
+  },
+];
+
+const AIRDEFENCE: PageDef = {
+  slug: 'airdefence',
+  href: 'airdefence.html',
+  navLabel: 'Air defence',
+  title: 'BRIDGE Twin | Air Defence',
+  description:
+    'A live digital twin of a mobile air-defence vehicle — radar and track state, launcher readiness, chassis and power telemetry.',
+  twin: 'launcher',
+  live: true,
+  hero: {
+    eyebrow: 'Air defence',
+    heading: ['Radar to rail,', 'one live', 'picture.'],
+    lead: 'Resolve radar, launcher and vehicle state into a single operational model of',
+    typed: ['every canister', 'the full track file', 'the whole battery', 'the entire network'],
+    install: 'npm i @bridge/twin',
+    cta: 'Read the docs',
+  },
+  technical: {
+    heading: ['Radar, rail', 'and chassis,', 'one model'],
+    lead: 'From the antenna array to the levelling jacks, every subsystem reports its own readiness, load and service state.',
+  },
+  features: LAUNCHER_FEATURES,
+  stages: machineStages('launcher', LAUNCHER_FEATURES, 'breakdown'),
+};
+
+/* -------------------------------------------------------------------------- */
+/* registry                                                                    */
+/* -------------------------------------------------------------------------- */
 
 export const PAGES: Record<string, PageDef> = {
   index: HOME,
+  aerospace: AEROSPACE,
   airborne: AIRBORNE,
   automotive: AUTOMOTIVE,
-  field: FIELD,
+  defence: DEFENCE,
+  airdefence: AIRDEFENCE,
 };
 
 /** Header links - only pages whose machine actually exists. */

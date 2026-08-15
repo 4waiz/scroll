@@ -8,9 +8,11 @@ import { defineConfig } from 'vite';
  */
 const pages = {
   index: resolve(__dirname, 'index.html'),
+  aerospace: resolve(__dirname, 'aerospace.html'),
   airborne: resolve(__dirname, 'airborne.html'),
   automotive: resolve(__dirname, 'automotive.html'),
-  field: resolve(__dirname, 'field.html'),
+  defence: resolve(__dirname, 'defence.html'),
+  airdefence: resolve(__dirname, 'airdefence.html'),
 };
 
 export default defineConfig({

@@ -80,6 +80,9 @@ export class ModelController {
     // Explode is applied from each part's authored direction, so it stays a
     // pure function of scroll progress and reverses exactly.
     twin.setExploded(1, state.explode as Record<string, number>);
+    // Assets that ship an authored teardown are scrubbed instead; the call is
+    // a no-op on twins without one.
+    twin.setExplodeT(state.explodeT);
     // Per-group spin (the GE9X's gear rings and LED arcs) is authored in the
     // keyframes; the whole-model idle turn is per-twin.
     twin.setGroupSpin(state.spin as Record<string, number>);

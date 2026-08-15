@@ -132,7 +132,7 @@ for (const d of DEVICES) {
     await page.setViewportSize({ width: d.width, height: d.height });
 
     for (const route of ROUTES) {
-      await page.goto(`/?state=${route}`, { waitUntil: 'load' });
+      await page.goto(`/aerospace.html?state=${route}`, { waitUntil: 'load' });
       await settle(page);
       const p = await probe(page);
 
@@ -178,7 +178,7 @@ for (const d of DEVICES) {
       }
     }
 
-    await page.goto('/?state=telemetry', { waitUntil: 'load' });
+    await page.goto('/aerospace.html?state=telemetry', { waitUntil: 'load' });
     await settle(page);
     await page.screenshot({ path: `screenshots/responsive/${d.name}.png` });
 
